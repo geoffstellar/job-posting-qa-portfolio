@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Tickets — Cedarline QA{% endblock %}
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tickets.css') }}">
+{% endblock %}
+{% block content %}
+<div class="container">
+
+  <!-- Mode toggle -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-mode-live"     onclick="setMode('live')">Live Tickets</button>
+    <!-- Pending Review tab removed 2026-04-16 (pending_tickets retired) -->
+    <button class="mode-btn"        id="btn-mode-rejected" onclick="setMode('rejected')">
+      Rejected<span class="mode-badge" id="rejected-mode-badge" style="display:none">0</span>
+    </button>
+  </div>
+
+  <!-- LIVE VIEW -->
+  <div id="live-view">
+
+  <!-- Filters (Direction B redesign 2026-04-21: four labeled clusters with
+       dividers. All three state filters (Severity / Status / Detected By)
+       are now multi-select dropdowns matching the Community / Check Type
+       component so every control has the same visual weight. Filter logic
+       is unchanged. -->
+  <div class="filter-card">
+    <div class="filter-row">
+
+      <!-- Cluster 1: What to match -->
+      <div class="filter-cluster">
+        <div class="filter-cluster-label">What to match</div>
+        <div class="filter-cluster-controls">
+          <div class="filter-group">
+            <label>Community</label>
+            <div class="ms-wrap" id="ms-community-wrap">
+              <button class="ms-btn" id="ms-community-btn" onclick="toggleMs('community')">
+                <span id="ms-community-label">All communities</span>
+                <span class="ms-badge" id="ms-community-badge" style="display:none"></span>
+                <span class="ms-caret">▼</span>
+              </button>
+              <div class="ms-dropdown" id="ms-community-dd">
+                <input class="ms-search" placeholder="Search…" oninput="filterMs('community',this.value)">
+                <div class="ms-list" id="ms-community-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Check Type</label>
+            <div class="ms-wrap" id="ms-checktype-wrap">
+              <button class="ms-btn" id="ms-checktype-btn" onclick="toggleMs('checktype')">
+                <span id="ms-checktype-label">All check types</span>
+                <span class="ms-badge" id="ms-checktype-badge" style="display:none"></span>
+                <span class="ms-caret">▼</span>
+              </button>
+              <div class="ms-dropdown" id="ms-checktype-dd" style="min-width:320px;max-width:420px">
+                <input class="ms-search" placeholder="Search…" oninput="filterMs('checktype',this.value)">
+                <div class="ms-list" id="ms-checktype-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section — display-only taxonomy metadata; kept single-select.
+               "(null)" matches cross-cutting tickets with no Section tag. -->
+          <div class="filter-group">
+            <label>Section</label>
+            <select class="ctrl-select filter-select" id="filter-section" onchange="loadTickets()">
+              <option value="">All sections</option>
+              <option value="(null)">— (cross-cutting)</option>
+              <option value="Qualifications">Qualifications</option>
+              <option value="Responsibilities">Responsibilities</option>
+              <option value="What We Offer &mdash; Pay">What We Offer — Pay</option>
+              <option value="What We Offer &mdash; General">What We Offer — General</option>
+              <option value="Who We Are">Who We Are</option>
+              <option value="Community Intro">Community Intro</option>
+              <option value="Job Title">Job Title</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cluster 2: Ticket state -->
+      <div class="filter-cluster">
+        <div class="filter-cluster-label">Ticket state</div>
+        <div class="filter-cluster-controls">
+          <div class="filter-group">
+            <label>Severity</label>
+            <div class="ms-wrap" id="ms-severity-wrap">
+              <button class="ms-btn" id="ms-severity-btn" onclick="toggleMs('severity')">
+                <span id="ms-severity-label">All severities</span>
+                <span class="ms-badge" id="ms-severity-badge" style="display:none"></span>
+                <span class="ms-caret">▼</span>
+              </button>
+              <div class="ms-dropdown" id="ms-severity-dd">
+                <div class="ms-list" id="ms-severity-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Status</label>
+            <div class="ms-wrap" id="ms-status-wrap">
+              <button class="ms-btn" id="ms-status-btn" onclick="toggleMs('status')">
+                <span id="ms-status-label">Open</span>
+                <span class="ms-badge" id="ms-status-badge" style="display:none"></span>
+                <span class="ms-caret">▼</span>
+              </button>
+              <div class="ms-dropdown" id="ms-status-dd">
+                <div class="ms-list" id="ms-status-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Detected By</label>
+            <div class="ms-wrap" id="ms-detected-wrap">
+              <button class="ms-btn" id="ms-detected-btn" onclick="toggleMs('detected')">
+                <span id="ms-detected-label">All sources</span>
+                <span class="ms-badge" id="ms-detected-badge" style="display:none"></span>
+                <span class="ms-caret">▼</span>
+              </button>
+              <div class="ms-dropdown" id="ms-detected-dd">
+                <div class="ms-list" id="ms-detected-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cluster 3: When -->
+      <div class="filter-cluster">
+        <div class="filter-cluster-label">When</div>
+        <div class="filter-cluster-controls">
+          <div class="filter-group filter-group-date">
+            <label>Date Range</label>
+            <div class="date-inputs">
+              <input type="date" class="date-input" id="date-from" title="From date (inclusive)" oninput="clearDatePreset()">
+              <span class="date-sep">&ndash;</span>
+              <input type="date" class="date-input" id="date-to" title="To date (inclusive)" oninput="clearDatePreset()">
+            </div>
+            <div class="date-presets">
+              <button class="date-chip" onclick="setDatePreset('today',this)">Today</button>
+              <button class="date-chip" onclick="setDatePreset('yesterday',this)">Yesterday</button>
+              <button class="date-chip" onclick="setDatePreset('last7',this)">Last 7</button>
+              <button class="date-chip" onclick="setDatePreset('week',this)">This week</button>
+              <button class="date-chip" onclick="setDatePreset('month',this)">This month</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.filter-row -->
+
+    <!-- Utility footer: root-cause toggle on left, Clear/Apply on right.
+         Direction B refinement 2026-04-21: Actions was demoted from its own
+         labeled cluster (wasted space at bottom-right) to a thin utility row
+         spanning the full card width. -->
+    <div class="filter-footer">
+      <label class="filter-check" title="Suggest possible root-cause groupings: tickets that share the same offending text across 3+ postings collapse into one row. Use with judgment — the pattern may or may not trace to a shared template.">
+        <input type="checkbox" id="filter-template-rollup" onchange="onTemplateRollupToggle()">
+        <span>Group possible root-cause patterns</span>
+      </label>
+      <div class="filter-action-buttons">
+        <button class="btn-sm btn-clear" onclick="resetFilters()">Clear</button>
+        <button class="btn-sm btn-apply" onclick="loadTickets()">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-card">
+    <div class="results-header">
+      <h2>Tickets</h2>
+      <span class="count-badge" id="ticket-count">—</span>
+    </div>
+    <div id="tickets-body"><div class="loading">Loading…</div></div>
+  </div>
+
+  </div><!-- end #live-view -->
+
+  <!-- Pending Review view removed 2026-04-16 (pending_tickets retired).
+       New checks come through the Claude qa-rules-maintenance skill
+       (the in-dashboard Add Check wizard was removed 2026-04-24). -->
+
+  <!-- REJECTED VIEW -->
+  <div id="rejected-view" style="display:none">
+    <div id="rejected-body"><div class="loading">Loading…</div></div>
+  </div>
+
+  <!-- Capture-as-Template modal (Templates Phase 2, 2026-04-21).
+       Hidden by default; shown when the admin clicks "Capture as Template"
+       on a rollup card. See tickets.js captureAsTemplate(). Non-admins
+       never see the trigger button so this markup stays dormant for them. -->
+  <div id="capture-modal" class="capture-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="capture-modal-title">
+    <div class="capture-modal-backdrop" onclick="closeCaptureModal()"></div>
+    <div class="capture-modal-panel">
+      <div class="capture-modal-header">
+        <h3 id="capture-modal-title">Capture as Template</h3>
+        <button class="capture-modal-close" onclick="closeCaptureModal()" aria-label="Close">&times;</button>
+      </div>
+      <div class="capture-modal-body">
+        <p class="capture-modal-intro">
+          This creates a managed <strong>Templates</strong> entry. The
+          matched tickets are hidden from Live Tickets while you fix the
+          source; the community page still shows them so the community
+          can resolve their own postings.
+        </p>
+        <div class="capture-modal-field">
+          <label for="capture-name">Template name</label>
+          <input type="text" id="capture-name" maxlength="200"
+                 placeholder="Give this template a short, memorable name">
+          <div class="capture-modal-hint">
+            Suggested from the pattern &mdash; edit to whatever makes sense.
+          </div>
+        </div>
+        <div class="capture-modal-field">
+          <label>Pattern (read-only)</label>
+          <div class="capture-modal-pattern" id="capture-pattern-preview"></div>
+        </div>
+        <div class="capture-modal-meta">
+          <div class="capture-modal-meta-item">
+            <label>Tickets</label>
+            <div id="capture-ticket-count">&mdash;</div>
+          </div>
+          <div class="capture-modal-meta-item">
+            <label>Severity (highest-wins)</label>
+            <div id="capture-severity-preview">&mdash;</div>
+          </div>
+        </div>
+        <div class="capture-modal-status" id="capture-status"></div>
+      </div>
+      <div class="capture-modal-footer">
+        <button class="btn-sm btn-clear" onclick="closeCaptureModal()">Cancel</button>
+        <button class="btn-sm btn-apply" id="capture-confirm-btn" onclick="confirmCaptureAsTemplate()">Capture</button>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+{% endblock %}
+{% block scripts %}
+<!-- Toast target for tickets.js showToast() calls (capture success, bulk
+     resolve status, etc.). Added 2026-04-21 to fix a latent gap \u2014 the
+     function was being called without an element or inline definition on
+     the Tickets page, so pre-existing success/error flashes were silent. -->
+<div id="toast" class="toast"></div>
+<style>
+  .toast {
+    position: fixed; right: 20px; bottom: 20px;
+    background: #1a1a2e; color: white;
+    padding: 10px 16px; border-radius: 8px;
+    font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,.25);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+    max-width: 420px;
+  }
+  .toast.success { background: #14532d; opacity: 1; pointer-events: auto; }
+  .toast.error   { background: #7f1d1d; opacity: 1; pointer-events: auto; }
+</style>
+<script>
+  // Templates Category (Phase 2, 2026-04-21). Server-rendered from
+  // qa_dashboard.tickets_page() using current_user's page_permissions.
+  // Admins bypass; non-admin viewers default to false unless explicitly
+  // granted. tickets.js checks this before rendering the rollup
+  // "Capture as Template" button.
+  window.CAN_CAPTURE_TEMPLATES = {{ (can_capture_templates or false)|tojson }};
+
+  // showToast — inline so the flashes in tickets.js actually render.
+  // Mirrors the pattern in community_detail.html + qa_tools.html.
+  function showToast(type, msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { t.className = 'toast'; }, 4200);
+  }
+</script>
+<script src="{{ url_for('static', filename='js/tickets.js') }}"></script>
+{% endblock %}

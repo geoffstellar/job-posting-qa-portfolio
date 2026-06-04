@@ -1,0 +1,18 @@
+# QA Dashboard - Python dependencies
+# Install with: pip install -r requirements.txt
+
+# Application runtime
+Flask==3.1.3
+Werkzeug==3.1.8
+requests==2.32.5
+anthropic==0.92.0
+
+# Deployment. SQLAlchemy parses DATABASE_URL so SQLite (default) and Postgres
+# both work with no caller changes. psycopg is the Postgres driver (unused on
+# SQLite-only deployments). alembic runs schema migrations. gunicorn is the
+# production WSGI server; Flask's dev server is only for `python qa_dashboard.py`.
+SQLAlchemy==2.0.36
+alembic==1.14.0
+psycopg[binary]==3.2.3
+python-dotenv==1.0.1
+gunicorn==23.0.0

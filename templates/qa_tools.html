@@ -1,0 +1,1413 @@
+{% extends "base.html" %}
+{% block title %}Cedarline QA Tools{% endblock %}
+{% block extra_css %}
+    .container { max-width: 800px; margin: 40px auto; padding: 0 24px; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card p  { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover  { opacity: 0.88; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary   { background: #1a1a2e; color: white; }
+    .btn-secondary { background: #e8eaf0; color: #1a1a2e; }
+    .log-wrap {
+      display: none;
+      margin-top: 20px;
+      background: #0f1117;
+      border-radius: 8px;
+      padding: 16px 18px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .log-wrap pre {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: #c9d1d9;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-left: 12px;
+      vertical-align: middle;
+    }
+    .status.running { background: #fff3cd; color: #856404; }
+    .status.done    { background: #d1fae5; color: #065f46; }
+    .status.error   { background: #fee2e2; color: #991b1b; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* Ticket Controls editor */
+    .controls-filter-row {
+      display: flex; align-items: center; gap: 10px; margin-top: 14px; margin-bottom: 2px;
+    }
+    .controls-search {
+      flex: 1; max-width: 320px; padding: 6px 12px;
+      border: 1px solid #e2e4ea; border-radius: 8px;
+      font-size: 13px; font-family: inherit; outline: none;
+    }
+    .controls-search:focus { border-color: #1a1a2e; }
+    .controls-match-count { font-size: 12px; color: #999; }
+    .controls-wrap { overflow-x: auto; }
+    .controls-table {
+      width: 100%; border-collapse: collapse; margin-top: 10px;
+      font-size: 13px; table-layout: fixed;
+    }
+    .controls-table th {
+      text-align: left; padding: 8px 10px;
+      background: #f4f5f7; border-bottom: 2px solid #e2e4ea;
+      font-weight: 600; color: #444; white-space: nowrap; overflow: hidden;
+    }
+    .controls-table td {
+      padding: 7px 10px; border-bottom: 1px solid #f0f1f4;
+      vertical-align: top; overflow: hidden; word-break: break-word;
+    }
+    .controls-table tr:last-child td { border-bottom: none; }
+    .controls-table tr:hover td { background: #fafbfc; }
+    .controls-table tr.ct-hidden { display: none; }
+    .check-name { font-weight: 500; color: #1a1a2e; word-break: break-word; }
+    .check-name:hover .itype-actions { opacity: 1; }
+    .itype-label { display: inline; }
+    .itype-actions {
+      display: inline-flex; gap: 4px; margin-left: 6px;
+      opacity: 0; transition: opacity 0.15s; vertical-align: middle;
+    }
+    .itype-btn {
+      background: none; border: 1px solid #ddd; border-radius: 4px;
+      padding: 1px 5px; font-size: 12px; cursor: pointer; color: #888;
+      line-height: 1.3;
+    }
+    .itype-btn:hover { background: #f0f1f7; color: #333; border-color: #bbb; }
+    .itype-btn-retire:hover { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .itype-rename-row {
+      margin-top: 6px; display: flex; align-items: center; gap: 6px;
+    }
+    .itype-rename-input {
+      flex: 1; padding: 4px 8px; border: 1px solid #C89B3C; border-radius: 6px;
+      font-size: 13px; font-family: inherit; outline: none; background: #fffdf5;
+    }
+    .itype-rename-save {
+      padding: 4px 10px; border: none; border-radius: 6px;
+      background: #1a1a2e; color: white; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .itype-rename-save:hover { opacity: 0.85; }
+    .itype-rename-cancel {
+      padding: 4px 10px; border: 1px solid #ddd; border-radius: 6px;
+      background: white; color: #666; font-size: 12px; cursor: pointer;
+    }
+    .itype-rename-cancel:hover { background: #f5f5f5; }
+
+    /* Toggle switch */
+    .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+    .toggle { position: relative; display: inline-block; width: 42px; height: 22px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: #d1d5db; border-radius: 22px; transition: 0.2s;
+    }
+    .slider:before {
+      content: ""; position: absolute;
+      height: 16px; width: 16px; left: 3px; bottom: 3px;
+      background: white; border-radius: 50%; transition: 0.2s;
+    }
+    .toggle input:checked + .slider { background: #1a1a2e; }
+    .toggle input:checked + .slider:before { transform: translateX(20px); }
+    .toggle-label { font-size: 12px; color: #666; }
+
+    .fix-input {
+      width: 100%; padding: 6px 8px; border: 1px solid #e2e4ea;
+      border-radius: 6px; font-size: 12.5px; color: #1a1a2e;
+      background: #fafbfc; outline: none; transition: border-color 0.15s;
+      font-family: inherit; resize: vertical; min-height: 60px; line-height: 1.5;
+    }
+    .fix-input:focus { border-color: #1a1a2e; background: white; }
+    .fix-input::placeholder { color: #aaa; font-style: italic; }
+    .auto-text-label {
+      font-size: 11px; font-weight: 600; color: #999;
+      text-transform: uppercase; letter-spacing: 0.4px;
+      margin-top: 6px; margin-bottom: 2px;
+    }
+    .auto-text {
+      font-size: 12px; color: #888; line-height: 1.5;
+      padding: 5px 8px; background: #f4f5f7;
+      word-break: break-word; overflow-wrap: break-word;
+      border-radius: 6px; border: 1px solid #e8eaed;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* Compact settings column */
+    .settings-cell { display: flex; flex-direction: column; gap: 7px; }
+    .settings-row  { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .settings-label {
+      font-size: 11px; font-weight: 600; color: #888;
+      text-transform: uppercase; letter-spacing: .3px;
+      width: 72px; flex-shrink: 0;
+    }
+    .settings-val { font-size: 12px; color: #555; }
+    .fix-section {
+      margin-top: 14px; padding-top: 12px;
+      border-top: 1px solid #eef0f4;
+    }
+    /* Header row: label on the left, Preview-current button on the right.
+       Flex-justify keeps them separated so the button reads as its own action
+       rather than an inline modifier of the label. */
+    .fix-section-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; margin-bottom: 6px;
+    }
+    .fix-section-label {
+      font-size: 11px; font-weight: 600; color: #888;
+      text-transform: uppercase; letter-spacing: .3px;
+      line-height: 1.4;
+    }
+    .fix-section-hint {
+      display: block; margin-top: 2px;
+      font-weight: 400; color: #bbb;
+      text-transform: none; letter-spacing: normal;
+      font-size: 11px;
+    }
+
+    /* Generic select styling for Controls page dropdowns (Section, Duplicate
+       handling, etc.). Matches .sev-select dimensions so all dropdowns in a
+       row have the same visual weight — just without the severity colors,
+       since severity is the most important signal on that row. */
+    .ctrl-select {
+      padding: 4px 6px; border: 1px solid #e2e4ea; border-radius: 6px;
+      font-size: 12px; font-family: inherit; background: white; color: #1a1a2e;
+      cursor: pointer; font-weight: 600;
+    }
+    .ctrl-select:focus { border-color: #1a1a2e; outline: none; }
+    .ctrl-select:hover { border-color: #b8bcc7; }
+
+    /* Severity select in controls */
+    .sev-select {
+      padding: 4px 6px; border: 1px solid #e2e4ea; border-radius: 6px;
+      font-size: 12px; font-family: inherit; background: white; color: #1a1a2e;
+      cursor: pointer; width: 100%;
+    }
+    .sev-select:focus { border-color: #1a1a2e; outline: none; }
+    .sev-select.CRITICAL { background:#fef2f2;color:#991b1b;border-color:#fca5a5;font-weight:700; }
+    .sev-select.MEDIUM   { background:#fffbeb;color:#92400e;border-color:#fcd34d;font-weight:700; }
+    .sev-select.HIGH     { background:#fff7ed;color:#9a3412;border-color:#fb923c;font-weight:700; }
+    .sev-select.LOW      { background:#f0f4ff;color:#3730a3;border-color:#a5b4fc;font-weight:700; }
+
+    /* Auto-save hint beside the Controls header buttons (2026-04-17). */
+    .controls-autosave-hint {
+      margin-left: auto; font-size: 12px; color: #888;
+      font-style: italic;
+    }
+    /* Tiny per-field save indicator (appears briefly after auto-save lands). */
+    .row-save-indicator {
+      display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 600;
+      opacity: 0; transition: opacity .25s;
+    }
+    .row-save-indicator.saving { color: #888; opacity: 1; }
+    .row-save-indicator.saved  { color: #065f46; opacity: 1; }
+    .row-save-indicator.error  { color: #991b1b; opacity: 1; }
+
+    /* Community-Page Explanation preview box (2026-04-16). Shows an AI-summarized
+       plain-English view of what a community reader would see for this check,
+       triggered on-demand via the "Preview current" button. Styled as a
+       standalone action so it reads as "click me to do something" rather
+       than an inline tag on the explanation label. 2026-04-17. */
+    .fix-preview-btn {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 12px;
+      font-size: 12px; font-weight: 600; line-height: 1.2;
+      background: #fffbeb; color: #713f12;
+      border: 1px solid #fcd34d; border-radius: 6px;
+      cursor: pointer; transition: all .15s;
+      white-space: nowrap;
+    }
+    .fix-preview-btn:hover {
+      background: #fef3c7; border-color: #fbbf24;
+    }
+    .fix-preview {
+      margin-top: 8px; padding: 10px 14px;
+      background: #f0f4ff; border: 1px solid #a5b4fc; border-radius: 8px;
+      font-size: 12.5px; color: #1e1b4b; line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .fix-preview.fix-preview-loading { color: #666; font-style: italic; }
+    .fix-preview.fix-preview-error    { background:#fef2f2; border-color:#fca5a5; color:#991b1b; }
+    .fix-preview-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px; font-size: 11px; font-weight: 700;
+      color: #3730a3; text-transform: uppercase; letter-spacing: .3px;
+    }
+    .fix-preview-close {
+      background: none; border: none; color: #6366f1; cursor: pointer;
+      font-size: 15px; line-height: 1; padding: 0 4px;
+    }
+    .fix-preview-close:hover { color: #3730a3; }
+
+    /* Total-ticket-count display beside the severity dropdown (2026-04-16).
+       Replaces the old per-severity chip breakdown — severity is now just the
+       dropdown value, and this is a simple "how many of this exist" indicator. */
+    .ticket-count-summary {
+      display: inline-block; margin-left: 10px;
+      font-size: 12px; font-weight: 600; color: #555;
+      padding: 2px 9px; border-radius: 10px; background: #f4f5f7;
+      white-space: nowrap;
+    }
+    .ticket-count-summary.ticket-count-zero {
+      color: #aaa; font-style: italic; background: transparent;
+    }
+    .sev-chip-none     { font-size: 11px; color: #aaa; font-style: italic; }
+
+    /* Duplicate handling — stacked block layout (label on its own line,
+       then select, then hint). Doesn't use the settings-label / settings-row
+       flex grid because the long-form labels overflow that 72px column. */
+    .mlb-block {
+      margin-top: 4px; padding: 8px 10px;
+      background: #fafbfc; border: 1px solid #eef0f4; border-radius: 6px;
+    }
+    .mlb-label {
+      font-size: 11px; font-weight: 600; color: #888;
+      text-transform: uppercase; letter-spacing: .3px;
+      margin-bottom: 5px;
+    }
+    .mlb-select {
+      width: 100%; max-width: 340px;
+      margin-bottom: 5px;
+    }
+    .mlb-hint {
+      font-size: 11px; color: #888; line-height: 1.45;
+      font-style: italic;
+    }
+    .mlb-hint b { color: #1a1a2e; font-weight: 700; font-style: normal; }
+
+    /* Controls nav chips row */
+    .controls-nav-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      margin-top: 14px; margin-bottom: 8px;
+    }
+    .ctrl-chip {
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      border: 1.5px solid #ddd; background: white; cursor: pointer; transition: all .15s;
+      color: #555;
+    }
+    .ctrl-chip.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+    .ctrl-chip.excluded-chip.active { background: #b91c1c; border-color: #b91c1c; }
+    .ctrl-expand-btn {
+      margin-left: auto; padding: 4px 10px; border-radius: 6px; font-size: 12px;
+      border: 1px solid #e2e4ea; background: white; color: #555; cursor: pointer;
+    }
+    .ctrl-expand-btn:hover { background: #f0f1f7; }
+
+    .toast {
+      display: none; margin-top: 14px; padding: 10px 16px;
+      border-radius: 8px; font-size: 13px; font-weight: 500;
+    }
+    .toast.success { background: #d1fae5; color: #065f46; display: block; }
+    .toast.error   { background: #fee2e2; color: #991b1b; display: block; }
+    .controls-loading { padding: 20px 0; color: #888; font-size: 13px; text-align: center; }
+
+    /* Accordion cards for Ticket Controls */
+    .acc-card {
+      border: 1px solid #e2e4ea; border-radius: 10px;
+      margin-top: 10px; overflow: hidden;
+    }
+    .acc-card.acc-hidden { display: none; }
+    .acc-header {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px; background: #f9fafb;
+      border: none; border-bottom: 1px solid #e2e4ea;
+      cursor: pointer; text-align: left; font-family: inherit;
+      transition: background .15s;
+    }
+    .acc-header:hover { background: #f0f2f7; }
+    .acc-card.open .acc-header { background: #eef0f7; }
+    .acc-loc { font-size: 14px; font-weight: 700; color: #1a1a2e; flex: 1; }
+    .acc-type-tag {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+      background: #e8eaf0; color: #666; text-transform: uppercase; letter-spacing: .4px;
+    }
+    .acc-count { font-size: 12px; color: #888; }
+    .acc-chevron { font-size: 10px; color: #aaa; transition: transform 0.2s; }
+    .acc-card.open .acc-chevron { transform: rotate(180deg); }
+    .acc-body { display: none; overflow-x: auto; }
+    .acc-card.open .acc-body { display: block; }
+
+    /* Group divider headers */
+    .acc-group-header {
+      display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+      margin: 22px 0 6px 0; padding: 0 4px;
+      border-bottom: 2px solid #e2e4ea; padding-bottom: 6px;
+    }
+    .acc-group-header:first-child { margin-top: 8px; }
+    .acc-group-title {
+      font-size: 15px; font-weight: 800; color: #1a1a2e;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    .acc-group-subtitle {
+      font-size: 12px; color: #888; font-weight: 400;
+    }
+    .acc-type-tag[class] {  /* base reset for specificity */
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: .4px;
+    }
+
+    /* Mute vs. Retire inline help (April 2026). Tiny ⓘ glyph that
+       exposes a one-sentence tooltip — enough to prevent misclicks. */
+    .info-icon {
+      display: inline-block; margin-left: 4px; color: #9ca3af;
+      font-size: 12px; cursor: help; font-weight: 700;
+      vertical-align: middle;
+    }
+    .info-icon:hover, .info-icon:focus { color: #3730a3; outline: none; }
+    .itype-btn-retire { position: relative; }
+    .itype-btn-retire[title]::after {
+      /* browser-native title is enough; no custom pseudo needed */
+    }
+
+    /* Mute / pause feature (April 2026) — view-only filter.
+       See the internal issue tracker → "Mute / pause toggle". Muted rows
+       keep firing checks but hide tickets from Live Tickets + Community pages. */
+    .acc-row-muted td            { background: #f6f6f9 !important; color: #888; }
+    .acc-row-muted .check-name   { color: #888; }
+    .acc-row-muted .sev-select,
+    .acc-row-muted .fix-input    { opacity: 0.65; }
+    .muted-badge {
+      display: inline-block; margin-left: 8px; padding: 1px 8px;
+      border-radius: 10px; font-size: 10px; font-weight: 700;
+      background: #e5e7eb; color: #4b5563;
+      letter-spacing: .3px; text-transform: uppercase;
+      vertical-align: middle;
+    }
+    .mute-category-btn {
+      padding: 3px 10px; border: 1px solid #ddd; border-radius: 6px;
+      background: white; color: #666; font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .mute-category-btn:hover { background: #f4f5f7; color: #333; border-color: #bbb; }
+    .mute-category-btn.active {
+      background: #fef3c7; color: #92400e; border-color: #fcd34d;
+    }
+    .mute-category-btn.active:hover { background: #fde68a; }
+    .mute-summary {
+      display: block; margin: 4px 0 10px 0;
+      font-size: 12px; color: #6b7280;
+    }
+    .mute-summary.none { color: #9ca3af; font-style: italic; }
+    .mute-summary b   { color: #1a1a2e; font-weight: 700; }
+    .ctrl-chip.muted-chip.active { background: #b45309; border-color: #b45309; }
+
+    /* Retired Checks section (Phase 4) */
+    .retired-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; background: #f4f5f7; border-radius: 10px;
+      cursor: pointer; transition: background .15s; user-select: none;
+    }
+    .retired-header:hover { background: #eef0f4; }
+    .retired-title { font-size: 14px; font-weight: 700; color: #555; flex: 1; }
+    .retired-count { font-size: 12px; color: #888; }
+    .retired-header .acc-chevron { font-size: 10px; color: #aaa; transition: transform .2s; }
+    .retired-header .acc-chevron.open { transform: rotate(180deg); }
+    .retired-card {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 10px 16px; border-bottom: 1px solid #f0f1f4;
+      font-size: 13px;
+    }
+    .retired-card:last-child { border-bottom: none; }
+    .retired-pair { font-weight: 600; color: #555; min-width: 200px; }
+    .retired-date { font-size: 11px; color: #999; }
+    .retired-note { font-size: 12px; color: #888; flex: 1; }
+    .retired-revive {
+      padding: 4px 12px; border: 1.5px solid #065f46; border-radius: 6px;
+      background: white; color: #065f46; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .retired-revive:hover { background: #d1fae5; }
+{% endblock %}
+{% block content %}
+<div class="container">
+
+  <div class="card">
+    <h2>Standard Check</h2>
+    <p>Fetches all live job postings from Hireology, runs the full automated QA pipeline
+       (rule-based checks + HTML/tone/boilerplate checks), and updates ticket history.</p>
+    <p style="font-size:12px;color:#666;margin-top:-8px;margin-bottom:16px">
+      Use this for your regular daily or weekly sync. No AI costs — fully automated.
+    </p>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="run('full', this)">Run Standard Check</button>
+    </div>
+    <div class="log-wrap" id="log-full"><pre id="pre-full"></pre></div>
+  </div>
+
+  <div class="card">
+    <h2>AI Check</h2>
+    <p>Runs a Standard Check first to get fresh data, then sends each unreviewed posting
+       to Claude for deeper analysis: missing sections, tone issues, community name accuracy,
+       compensation clarity, and other issues only a reader can catch. New findings are added
+       as CLAUDE tickets — known types go live immediately, novel types go to Pending Review.
+       Grammar and spelling issues are auto-approved and skip Pending Review.</p>
+    <p style="font-size:12px;color:#888;margin-top:-8px;margin-bottom:16px">
+      ⏱ Takes a few minutes depending on how many postings are queued.
+      Keep this tab open until it finishes.
+    </p>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="run('ai', this)">Run AI Check</button>
+    </div>
+    <div class="log-wrap" id="log-ai"><pre id="pre-ai"></pre></div>
+  </div>
+
+  <div class="card">
+    <h2>Ticket Controls</h2>
+    <p>Checks are organized by <b>Category</b> (the single taxonomy axis):
+       Tone, Content, Formatting, Structure, Job Title, HTML. Each check is tagged
+       with an optional <b>Section</b> (display-only metadata that tells communities
+       where in the posting the issue lives). Set the severity, toggle
+       community-page visibility, choose how the check dedupes across sections,
+       and edit the explanation shown to communities. Changes save automatically.</p>
+    <div class="btn-row">
+      <!-- Auto-save: changes write directly to the DB as you edit. No manual
+           Save / Reload buttons. 2026-04-17 (Ticket Controls Adjustment).
+           Add Check wizard + Discovery mode removed 2026-04-24 — new checks
+           are now added via the Claude qa-rules-maintenance skill. -->
+      <span class="controls-autosave-hint" id="controls-autosave-hint">
+        Changes save automatically
+      </span>
+    </div>
+    <div id="controls-body"></div>
+    <div id="controls-toast" class="toast"></div>
+
+    <!-- Retired Checks section (2026-04-16, Phase 4) -->
+    <div id="retired-section" style="margin-top:20px;display:none">
+      <div class="retired-header" onclick="document.getElementById('retired-list').style.display=document.getElementById('retired-list').style.display==='none'?'':'none'; this.querySelector('.acc-chevron').classList.toggle('open')">
+        <span class="retired-title">Retired Checks</span>
+        <span class="retired-count" id="retired-count"></span>
+        <span class="acc-chevron">&#x25BE;</span>
+      </div>
+      <div id="retired-list" style="display:none"></div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+let _aiRunning = false;
+function _beforeUnloadGuard(e) {
+  e.preventDefault();
+  e.returnValue = '';
+}
+
+function run(job, btn) {
+  const logWrap = document.getElementById('log-' + job);
+  const pre     = document.getElementById('pre-' + job);
+  pre.textContent = '';
+  logWrap.style.display = 'block';
+  btn.disabled = true;
+
+  let badge = btn.parentElement.querySelector('.status');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'status';
+    btn.parentElement.appendChild(badge);
+  }
+  badge.className = 'status running';
+  badge.textContent = 'Running...';
+
+  // Warn if user tries to close the tab during an AI run
+  if (job === 'ai') {
+    _aiRunning = true;
+    window.addEventListener('beforeunload', _beforeUnloadGuard);
+  }
+
+  const es = new EventSource('/run/' + job);
+  es.onmessage = e => {
+    pre.textContent += e.data + '\n';
+    logWrap.scrollTop = logWrap.scrollHeight;
+  };
+  es.addEventListener('done', e => {
+    es.close();
+    btn.disabled = false;
+    if (job === 'ai') {
+      _aiRunning = false;
+      window.removeEventListener('beforeunload', _beforeUnloadGuard);
+    }
+    const ok = e.data === '0';
+    badge.className = 'status ' + (ok ? 'done' : 'error');
+    badge.textContent = ok ? 'Done' : 'Error -- see log above';
+  });
+  es.onerror = () => {
+    es.close();
+    btn.disabled = false;
+    badge.className = 'status error';
+    badge.textContent = 'Connection lost';
+  };
+}
+
+// ── Ticket Controls editor ────────────────────────────────────────────────────
+
+let _controlsData = [];
+
+// loadControls() fetches the current email_controls rows and re-renders the
+// accordion. Called automatically on page load and after any Retire / Revive
+// action. Accepts no arguments (the old Reload button was removed 2026-04-17
+// — auto-save replaces the manual Save/Reload cycle).
+async function loadControls() {
+  const body  = document.getElementById('controls-body');
+  const toast = document.getElementById('controls-toast');
+  if (toast) { toast.className = 'toast'; toast.textContent = ''; }
+  if (body) body.innerHTML = '<div class="controls-loading">Loading…</div>';
+
+  try {
+    const res  = await fetch('/api/email-controls');
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error(data.error || 'Unexpected response');
+    _controlsData = data;
+    renderTable(data);
+  } catch (e) {
+    if (body) body.innerHTML = '';
+    showToast('error', 'Could not load controls: ' + e.message);
+  }
+}
+
+// ── Accordion helpers ─────────────────────────────────────────────────────────
+
+function toggleAcc(id) {
+  const card = document.getElementById(id);
+  if (card) card.classList.toggle('open');
+}
+
+function filterAccordion(val) {
+  const q = val.trim().toLowerCase();
+  const cards = document.querySelectorAll('.acc-card');
+  let shown = 0;
+  cards.forEach(card => {
+    if (!q) {
+      card.classList.remove('acc-hidden');
+      card.querySelectorAll('.acc-row').forEach(r => r.classList.remove('ct-hidden'));
+      shown++;
+      return;
+    }
+    const loc = (card.dataset.loc || '').toLowerCase();
+    let anyMatch = false;
+    card.querySelectorAll('.acc-row').forEach(row => {
+      const itype = (row.dataset.itype || '').toLowerCase();
+      const match = loc.includes(q) || itype.includes(q);
+      row.classList.toggle('ct-hidden', !match);
+      if (match) anyMatch = true;
+    });
+    card.classList.toggle('acc-hidden', !anyMatch);
+    if (anyMatch) { shown++; if (q) card.classList.add('open'); }
+  });
+  const el = document.getElementById('ct-match-count');
+  if (el) {
+    const total = cards.length;
+    el.textContent = q ? `${shown} of ${total} categor${total !== 1 ? 'ies' : 'y'} match` : '';
+  }
+  if (!q) _applyAccFilter();
+}
+
+// Quick-filter state for accordion. Under the flat model (2026-04-17) the
+// only chips are 'all' | 'hidden' | 'muted' — the old 'sections' / 'cross'
+// split was removed when the single-axis Category model shipped.
+let _accFilter = 'all';   // 'all' | 'hidden' | 'muted'
+
+function setAccFilter(f) {
+  _accFilter = f;
+  document.querySelectorAll('.ctrl-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.f === f);
+  });
+  _applyAccFilter();
+}
+
+function _applyAccFilter() {
+  document.querySelectorAll('.acc-card').forEach(card => {
+    let visible = true;
+    if (_accFilter === 'hidden') {
+      visible = Array.from(card.querySelectorAll('input[data-kind="comm"]')).some(cb => !cb.checked);
+    }
+    if (_accFilter === 'muted') {
+      // Show cards with any muted row (per-row greyed state is already applied)
+      visible = Array.from(card.querySelectorAll('input[data-kind="mute"]')).some(cb => cb.checked);
+    }
+    card.classList.toggle('acc-hidden', !visible);
+  });
+}
+
+function expandAllAcc() {
+  document.querySelectorAll('.acc-card:not(.acc-hidden)').forEach(c => c.classList.add('open'));
+}
+function collapseAllAcc() {
+  document.querySelectorAll('.acc-card:not(.acc-hidden)').forEach(c => c.classList.remove('open'));
+}
+
+// Canonical Category order (matches taxonomy.py CATEGORIES — single axis under
+// the flat model, 2026-04-17). Used to order Category accordions on the
+// Controls page and elsewhere.
+const CATEGORIES_ORDER = ['Tone', 'Content', 'Formatting', 'Structure', 'Job Title', 'HTML'];
+// Allowed Section vocabulary (the 8th value is null). Used by the per-row
+// Section selector.
+const SECTIONS_ORDER = [
+  'Qualifications',
+  'Responsibilities',
+  'What We Offer \u2014 Pay',
+  'What We Offer \u2014 General',
+  'Who We Are',
+  'Community Intro',
+  'Job Title',
+];
+
+function renderTable(rows) {
+  // Called by loadControls — renders an accordion grouped by Category (flat
+  // model, 2026-04-17). Default: fully collapsed per handoff Q4.
+  const body = document.getElementById('controls-body');
+  if (!rows.length) {
+    body.innerHTML = '<p style="margin-top:14px;color:#888;font-size:13px">No ticket controls found.</p>';
+    return;
+  }
+
+  // Group rows by Category, preserving global index for save
+  const catGroups = {};
+  rows.forEach((r, i) => {
+    const cat = r.category || r.check_type;
+    if (!catGroups[cat]) catGroups[cat] = { rows: [] };
+    catGroups[cat].rows.push({ ...r, _idx: i });
+  });
+
+  // Render canonical Categories first (in fixed order), then any
+  // non-canonical leftovers (shouldn't happen post-flatten, but tolerate).
+  const canonical = CATEGORIES_ORDER.filter(c => catGroups[c]);
+  const other     = Object.keys(catGroups).filter(c => !CATEGORIES_ORDER.includes(c)).sort();
+  const orderedKeys = [...canonical, ...other];
+
+  let html = `
+  <div class="controls-nav-row">
+    <button class="ctrl-chip active" data-f="all"      onclick="setAccFilter('all')">All</button>
+    <button class="ctrl-chip excluded-chip" data-f="hidden" onclick="setAccFilter('hidden')">Hidden from community</button>
+    <button class="ctrl-chip muted-chip"    data-f="muted"  onclick="setAccFilter('muted')">Muted</button>
+    <button class="ctrl-expand-btn" onclick="expandAllAcc()">Expand all</button>
+    <button class="ctrl-expand-btn" onclick="collapseAllAcc()">Collapse all</button>
+  </div>
+  <div class="controls-filter-row">
+    <input class="controls-search" type="search" placeholder="Filter by category or issue type…"
+           oninput="filterAccordion(this.value)" id="ct-search">
+    <span class="controls-match-count" id="ct-match-count"></span>
+  </div>
+  <span class="mute-summary" id="mute-summary"></span>
+  <div id="acc-container">`;
+
+  let ai = 0;
+  orderedKeys.forEach(cat => {
+      const group = catGroups[cat];
+      const aid   = 'acc-' + ai;
+
+      const mutedInArea = group.rows.filter(r => r.muted).length;
+      const allMuted    = mutedInArea === group.rows.length && group.rows.length > 0;
+      const areaBtnLbl  = allMuted ? 'Unmute all' : 'Mute all';
+      const areaBtnCls  = (mutedInArea > 0 ? 'active' : '');
+      // Flat model (2026-04-17): default all accordions CLOSED per handoff Q4.
+      html += `
+      <div class="acc-card" id="${aid}" data-loc="${escHtml(cat)}" data-muted="${mutedInArea > 0 ? '1' : '0'}">
+        <div class="acc-header" onclick="toggleAcc('${aid}')" role="button" tabindex="0">
+          <span class="acc-loc">${escHtml(cat)}</span>
+          <span class="acc-type-tag">Category</span>
+          <span class="acc-count" id="cnt-${aid}">${group.rows.length} issue type${group.rows.length !== 1 ? 's' : ''}</span>
+          <button class="mute-category-btn ${areaBtnCls}" id="mute-category-${aid}"
+                  data-category="${escHtml(cat)}"
+                  onclick="event.stopPropagation(); toggleMuteArea('${escHtml(cat).replace(/'/g, "\\'")}');">${areaBtnLbl}</button>
+          <span class="acc-chevron">▾</span>
+        </div>
+      <div class="acc-body">
+        <table class="controls-table">
+          <thead><tr>
+            <th style="width:28%">Issue Type</th>
+            <th>Settings &amp; Community-Page Explanation</th>
+          </tr></thead><tbody>`;
+
+    group.rows.forEach(r => {
+      const i          = r._idx;
+      const commOn     = r.show_on_community !== 0;
+      const fixVal     = escHtml(r.fix_instruction || '');
+      // Severity dropdown: always load with a real value. Empty default_severity
+      // (rare — usually a newly-moved or just-created row) falls back to MEDIUM
+      // so the dropdown never shows a literal "inherited" placeholder.
+      const curSev     = (r.default_severity || 'MEDIUM').toUpperCase();
+      const sevOpts    = ['CRITICAL','HIGH','MEDIUM','LOW'];
+      const sevHtml    = sevOpts.map(s =>
+        `<option value="${s}" ${curSev === s ? 'selected' : ''}>${s}</option>`
+      ).join('');
+      // Simple total-ticket-count display (replaces the per-severity chip breakdown
+      // that used to appear here — severity lives in the dropdown, ticket count
+      // is just a "how many of this exist" indicator).
+      const ticketTotal = r.open_ticket_count || 0;
+      const sevSummary = ticketTotal > 0
+        ? `<span class="ticket-count-summary">${ticketTotal} open ticket${ticketTotal !== 1 ? 's' : ''}</span>`
+        : '<span class="ticket-count-summary ticket-count-zero">No open tickets</span>';
+      const isMuted   = !!r.muted;
+      const muteTitle = isMuted
+        ? 'Muted' + (r.muted_reason ? ' — ' + r.muted_reason : '') + '. Tickets hidden from Live + Community pages.'
+        : 'Mute this check (tickets still fire; just hidden from Live + Community)';
+      html += `<tr class="acc-row${isMuted ? ' acc-row-muted' : ''}" data-itype="${escHtml(r.issue_type || r.check_type || '')}" data-category="${escHtml(r.category || '')}" data-idx="${i}">
+        <td class="check-name">
+          <span class="itype-label" id="itype-lbl-${i}">${escHtml(r.issue_type || r.check_type)}</span>
+          <span class="muted-badge" id="muted-badge-${i}" style="display:${isMuted ? 'inline-block' : 'none'}">Muted</span>
+          <span class="itype-actions">
+            <button class="itype-btn" title="Rename" onclick="startRenameItype(${i})">✎</button>
+            <button class="itype-btn itype-btn-retire" title="Retire: stop firing, archive open tickets, block AI re-suggestion. Nearly terminal." onclick="retireItype(${i})">✕</button>
+          </span>
+          <div class="itype-rename-row" id="itype-rename-${i}" style="display:none">
+            <input class="itype-rename-input" id="itype-input-${i}" type="text" value="${escHtml(r.issue_type || r.check_type)}">
+            <button class="itype-rename-save" onclick="saveRenameItype(${i})">Save</button>
+            <button class="itype-rename-cancel" onclick="cancelRenameItype(${i})">Cancel</button>
+          </div>
+        </td>
+        <td>
+          <div class="settings-cell">
+            <div class="settings-row">
+              <span class="settings-label">Severity</span>
+              <select class="sev-select ${curSev}" data-idx="${i}" data-kind="sev"
+                      onchange="this.className='sev-select '+this.value; saveRowByIdx(${i});"
+                      style="width:140px">
+                ${sevHtml}
+              </select>
+              ${sevSummary}
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Comm. Page</span>
+              <label class="toggle" title="${commOn ? 'Visible on community page' : 'Hidden from community page'}">
+                <input type="checkbox" ${commOn ? 'checked' : ''} data-idx="${i}" data-kind="comm" onchange="updateLabel(this); saveRowByIdx(${i});">
+                <span class="slider"></span>
+              </label>
+              <span class="settings-val" id="lbl-comm-${i}">${commOn ? 'On' : 'Off'}</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">Mute <span class="info-icon" tabindex="0" title="Mute: hide from view, keep firing. Reversible. Tickets keep accumulating so they reappear when unmuted.">&#9432;</span></span>
+              <label class="toggle" title="${escHtml(muteTitle)}">
+                <input type="checkbox" ${isMuted ? 'checked' : ''} data-idx="${i}" data-kind="mute" onclick="onMuteToggle(this)">
+                <span class="slider"></span>
+              </label>
+              <span class="settings-val" id="lbl-mute-${i}">${isMuted ? 'On' : 'Off'}</span>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label" title="Display-only metadata. Tells communities where in the posting this check's issues live. Null means cross-cutting.">Section</span>
+              <select class="ctrl-select" data-idx="${i}" data-kind="section"
+                      onchange="saveRowByIdx(${i})" style="width:210px">
+                <option value=""${!r.section ? ' selected' : ''}>— (cross-cutting)</option>
+                ${SECTIONS_ORDER.map(s =>
+                  `<option value="${escHtml(s)}"${r.section === s ? ' selected' : ''}>${escHtml(s)}</option>`
+                ).join('')}
+              </select>
+            </div>
+            <div class="mlb-block">
+              <div class="mlb-label" title="Controls how this check behaves when the same issue is detected in more than one section of a single posting.">Duplicate handling</div>
+              <select class="ctrl-select mlb-select" data-idx="${i}" data-kind="mlb"
+                      onchange="saveRowByIdx(${i})">
+                <option value="dedup"${(r.multi_location_behavior || 'dedup') === 'dedup' ? ' selected' : ''}>Combine &mdash; one ticket per posting</option>
+                <option value="per_section"${r.multi_location_behavior === 'per_section' ? ' selected' : ''}>Per section &mdash; separate ticket per section</option>
+              </select>
+              <div class="mlb-hint">
+                If this check fires in multiple sections of one posting:
+                <b>Combine</b> keeps it to one ticket (default);
+                <b>Per section</b> creates a ticket for each affected section.
+                Only applies to structural checks &mdash; instance-level checks
+                like spelling already fire once per occurrence.
+              </div>
+            </div>
+          </div>
+          <div class="fix-section">
+            <div class="fix-section-header">
+              <div class="fix-section-label">Community-Page Explanation
+                <span class="fix-section-hint">(shown on the community page to explain this issue and recommend a fix)</span>
+              </div>
+              <button class="fix-preview-btn" onclick="previewExplanation(${i})"
+                      title="Preview what a community reader would see for this check">
+                &#x2728; Preview current
+              </button>
+            </div>
+            <textarea class="fix-input" data-idx="${i}"
+                      oninput="saveRowByIdxDebounced(${i})"
+                      placeholder="Leave blank to hide the explanation block for this check type on the community page." rows="3">${fixVal}</textarea>
+            <div class="fix-preview" id="fix-preview-${i}" style="display:none"></div>
+          </div>
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+    ai++;
+  });
+
+  html += '</div>'; // #acc-container
+  body.innerHTML = html;
+  _accFilter = 'all';  // reset chip state on re-render
+  refreshMuteSummary();
+}
+
+function updateLabel(checkbox) {
+  const idx  = checkbox.dataset.idx;
+  const kind = checkbox.dataset.kind;
+  const el   = document.getElementById('lbl-' + kind + '-' + idx);
+  const lbl  = checkbox.closest('label.toggle');
+  if (el) el.textContent = checkbox.checked ? 'On' : 'Off';
+  if (lbl && kind === 'comm') {
+    lbl.title = checkbox.checked ? 'Visible on community page' : 'Hidden from community page';
+  }
+}
+
+// On-demand AI preview of the Community-Page Explanation for a specific check.
+// Uses whatever is currently typed in the textarea (so unsaved edits preview too),
+// plus a sample of the live offending-text patterns for that check, so the reader
+// gets a "what a community member would actually see" summary.
+async function previewExplanation(i) {
+  const r = _controlsData[i];
+  if (!r) return;
+  const panel = document.getElementById('fix-preview-' + i);
+  // Toggle closed if already open
+  if (panel.style.display === 'block' && !panel.classList.contains('fix-preview-loading')) {
+    panel.style.display = 'none';
+    return;
+  }
+  const ta = document.querySelector(`textarea.fix-input[data-idx="${i}"]`);
+  const currentText = (ta ? ta.value : r.fix_instruction || '').trim();
+  panel.style.display = 'block';
+  panel.className = 'fix-preview fix-preview-loading';
+  panel.textContent = 'Generating preview…';
+
+  try {
+    const res = await fetch('/api/checks/explanation-preview', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category: r.category || '',
+        issue_type: r.issue_type || r.check_type || '',
+        fix_instruction: currentText,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Server error');
+    const preview = (data.preview || '').trim();
+    panel.className = 'fix-preview';
+    panel.innerHTML =
+      '<div class="fix-preview-header">' +
+        '<span>Community reader preview</span>' +
+        `<button class="fix-preview-close" onclick="document.getElementById('fix-preview-${i}').style.display='none'">&times;</button>` +
+      '</div>' +
+      escHtml(preview || '(empty preview — no explanation currently set)');
+  } catch (e) {
+    panel.className = 'fix-preview fix-preview-error';
+    panel.textContent = 'Preview failed: ' + e.message;
+  }
+}
+
+// ── Auto-save (2026-04-17) ───────────────────────────────────────────────────
+// Replaces the old batch saveControls() + Reload button cycle. Every edit to a
+// row (severity select, community-page toggle, fix_instruction textarea) saves
+// that one row via a single-element POST to /api/email-controls. Textareas are
+// debounced 800 ms so we don't save on every keystroke.
+
+const _rowSaveTimers = {};   // per-idx setTimeout handles for textarea debounce
+const _ROW_SAVE_DEBOUNCE_MS = 800;
+
+// Read the current DOM values for a row and return the payload object the
+// /api/email-controls endpoint expects.
+function _rowPayload(i) {
+  const r = _controlsData[i];
+  if (!r) return null;
+  const sevSel  = document.querySelector(`.controls-table select[data-kind="sev"][data-idx="${i}"]`);
+  const commCb  = document.querySelector(`.controls-table input[data-kind="comm"][data-idx="${i}"]`);
+  const fixTa   = document.querySelector(`.controls-table textarea.fix-input[data-idx="${i}"]`);
+  const secSel  = document.querySelector(`.controls-table select[data-kind="section"][data-idx="${i}"]`);
+  const mlbSel  = document.querySelector(`.controls-table select[data-kind="mlb"][data-idx="${i}"]`);
+  return {
+    check_type:              r.check_type,
+    category:                    r.category || '',           // Category (legacy field name on this endpoint)
+    category:                r.category || '',           // flat-model alias
+    issue_type:              r.issue_type || '',
+    show_on_community:       commCb ? (commCb.checked ? 1 : 0) : (r.show_on_community !== 0 ? 1 : 0),
+    fix_instruction:         fixTa  ? fixTa.value.trim()       : (r.fix_instruction || ''),
+    notes:                   r.notes || '',
+    default_severity:        sevSel ? sevSel.value             : (r.default_severity || ''),
+    section:                 secSel ? (secSel.value || null)   : (r.section || null),
+    multi_location_behavior: mlbSel ? mlbSel.value             : (r.multi_location_behavior || 'dedup'),
+  };
+}
+
+// Show a brief per-row status indicator next to the issue-type label.
+function _setRowIndicator(i, state, text) {
+  let el = document.getElementById('row-save-' + i);
+  if (!el) {
+    const label = document.getElementById('itype-lbl-' + i);
+    if (!label) return;
+    el = document.createElement('span');
+    el.id = 'row-save-' + i;
+    el.className = 'row-save-indicator';
+    label.parentNode.insertBefore(el, label.nextSibling);
+  }
+  el.className = 'row-save-indicator ' + state;
+  el.textContent = text;
+  if (state === 'saved') {
+    setTimeout(() => { el.className = 'row-save-indicator'; }, 1500);
+  }
+}
+
+async function saveRowByIdx(i) {
+  const payload = _rowPayload(i);
+  if (!payload) return;
+  _setRowIndicator(i, 'saving', 'Saving…');
+  try {
+    const res = await fetch('/api/email-controls', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([payload]),     // endpoint expects an array
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) throw new Error(result.error || 'Server error');
+    // Update local cache so subsequent reads match the DB
+    Object.assign(_controlsData[i], {
+      show_on_community:       payload.show_on_community,
+      fix_instruction:         payload.fix_instruction,
+      default_severity:        payload.default_severity,
+      section:                 payload.section,
+      multi_location_behavior: payload.multi_location_behavior,
+    });
+    _setRowIndicator(i, 'saved', '\u2713 Saved');
+  } catch (e) {
+    _setRowIndicator(i, 'error', 'Save failed');
+    showToast('error', 'Save failed for row ' + i + ': ' + e.message);
+  }
+}
+
+// Debounced variant for textarea edits — resets the timer on every keystroke
+// so a burst of typing only hits the server once after 800 ms of quiet.
+function saveRowByIdxDebounced(i) {
+  clearTimeout(_rowSaveTimers[i]);
+  _setRowIndicator(i, 'saving', '\u2026');
+  _rowSaveTimers[i] = setTimeout(() => saveRowByIdx(i), _ROW_SAVE_DEBOUNCE_MS);
+}
+
+function showToast(type, msg) {
+  const t = document.getElementById('controls-toast');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  if (type === 'success') setTimeout(() => { t.className = 'toast'; t.textContent = ''; }, 5000);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Issue Type rename / retire handlers ──────────────────────────
+
+function startRenameItype(i) {
+  document.getElementById('itype-lbl-'    + i).style.display = 'none';
+  document.getElementById('itype-rename-' + i).style.display = 'flex';
+  const inp = document.getElementById('itype-input-' + i);
+  inp.focus();
+  inp.select();
+}
+
+function cancelRenameItype(i) {
+  document.getElementById('itype-rename-' + i).style.display = 'none';
+  document.getElementById('itype-lbl-'    + i).style.display = '';
+}
+
+async function saveRenameItype(i) {
+  const r        = _controlsData[i];
+  const category     = r.category || '';
+  const oldItype = r.issue_type || r.check_type || '';
+  const newItype = (document.getElementById('itype-input-' + i).value || '').trim();
+
+  if (!newItype || newItype === oldItype) { cancelRenameItype(i); return; }
+
+  try {
+    const res = await fetch('/api/issue-types/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, old_issue_type: oldItype, new_issue_type: newItype }),
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) throw new Error(result.error || 'Server error');
+
+    // Update local cache + visible label
+    r.issue_type = newItype;
+    r.check_type = category + ' \u2014 ' + newItype;
+    document.getElementById('itype-lbl-' + i).textContent = newItype;
+
+    // Also update the data-itype attribute on the row for filtering
+    const row = document.getElementById('itype-lbl-' + i).closest('tr');
+    if (row) row.setAttribute('data-itype', newItype);
+
+    cancelRenameItype(i);
+    showToast('success', 'Renamed to "' + newItype + '"');
+  } catch (e) {
+    showToast('error', 'Rename failed: ' + e.message);
+  }
+}
+
+async function retireItype(i) {
+  const r     = _controlsData[i];
+  const category  = r.category || '';
+  const itype = r.issue_type || r.check_type || '';
+  const openCount = r.open_ticket_count || 0;
+
+  // Prompt with ticket count + optional reason
+  const reason = prompt(
+    'Retire "' + itype + '" from ' + category + '?\n\n' +
+    (openCount > 0
+      ? 'This will archive ' + openCount + ' open ticket(s) and prevent new tickets from being generated.\n'
+      : 'No open tickets for this check.\n') +
+    'This action can be reversed via the Retired Checks section.\n\n' +
+    'Optional reason (leave blank if none):',
+    ''
+  );
+  if (reason === null) return;  // user cancelled
+
+  try {
+    const res = await fetch('/api/issue-types/retire', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, issue_type: itype, reason: reason.trim() }),
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) throw new Error(result.error || 'Server error');
+
+    // Remove the row from the table
+    const lbl = document.getElementById('itype-lbl-' + i);
+    const row = lbl ? lbl.closest('tr') : null;
+    if (row) row.remove();
+
+    // Update the count badge in the accordion header
+    const card = lbl ? lbl.closest('.acc-card') : null;
+    if (card) {
+      const countEl = card.querySelector('.acc-count');
+      const tbody   = card.querySelector('tbody');
+      const remaining = tbody ? tbody.querySelectorAll('tr').length : 0;
+      if (countEl) countEl.textContent = remaining + ' issue type' + (remaining !== 1 ? 's' : '');
+      if (remaining === 0) card.classList.remove('open');
+    }
+
+    const archMsg = result.archived_tickets
+      ? ' ' + result.archived_tickets + ' ticket(s) archived.'
+      : '';
+    showToast('success', 'Retired "' + category + ' / ' + itype + '".' + archMsg);
+    loadRetiredChecks();  // refresh the Retired section
+  } catch (e) {
+    showToast('error', 'Retire failed: ' + e.message);
+  }
+}
+
+// ── Mute / pause handlers (April 2026) ──────────────────────────────
+// Muting is view-only: checks keep firing, but tickets are hidden from
+// Live Tickets + Community pages. Rejected + Controls pages still show
+// them. See the internal issue tracker → "Mute / pause toggle".
+
+async function onMuteToggle(checkbox) {
+  const i = parseInt(checkbox.dataset.idx, 10);
+  const r = _controlsData[i];
+  if (!r) return;
+  const wasChecked = checkbox.checked;
+
+  if (wasChecked) {
+    // Muting: prompt for optional reason. Cancel -> revert the checkbox.
+    const reason = prompt(
+      'Mute "' + (r.issue_type || r.check_type) + '"?\n\n' +
+      'Muted checks keep firing, but their tickets are hidden from the\n' +
+      'Live Tickets page and Community pages (still visible on Rejected).\n\n' +
+      'Optional reason (leave blank if none):',
+      ''
+    );
+    if (reason === null) { checkbox.checked = false; return; }  // user cancelled
+    await mutePair(i, reason.trim() || null, checkbox);
+  } else {
+    await unmutePair(i, checkbox);
+  }
+}
+
+async function mutePair(i, reason, checkbox) {
+  const r = _controlsData[i];
+  try {
+    const res = await fetch('/api/issue-types/mute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category: r.category, issue_type: r.issue_type, reason: reason }),
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) throw new Error(result.error || 'Server error');
+    setRowMuted(i, true, reason, new Date().toISOString().slice(0, 19));
+    updateAreaMuteButton(r.category);
+    refreshMuteSummary();
+    showToast('success', 'Muted "' + r.issue_type + '". Hidden from Live + Community.');
+  } catch (e) {
+    if (checkbox) checkbox.checked = false;  // revert on failure
+    showToast('error', 'Mute failed: ' + e.message);
+  }
+}
+
+async function unmutePair(i, checkbox) {
+  const r = _controlsData[i];
+  try {
+    const res = await fetch('/api/issue-types/unmute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category: r.category, issue_type: r.issue_type }),
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) throw new Error(result.error || 'Server error');
+    setRowMuted(i, false, null, new Date().toISOString().slice(0, 19));
+    updateAreaMuteButton(r.category);
+    refreshMuteSummary();
+    showToast('success', 'Unmuted "' + r.issue_type + '". Tickets will reappear on Live + Community.');
+  } catch (e) {
+    if (checkbox) checkbox.checked = true;  // revert on failure
+    showToast('error', 'Unmute failed: ' + e.message);
+  }
+}
+
+async function toggleMuteArea(category) {
+  // Walk the category's rows. If every one is currently muted -> unmute all.
+  // Otherwise -> mute all (idempotent on already-muted ones; server restamps muted_at).
+  const idxs = _controlsData
+    .map((r, i) => ({ r, i }))
+    .filter(x => x.r.category === category);
+  if (!idxs.length) return;
+  const allMuted = idxs.every(x => x.r.muted);
+  const action   = allMuted ? 'unmute' : 'mute';
+  const verb     = allMuted ? 'Unmute' : 'Mute';
+
+  let reason = null;
+  if (action === 'mute') {
+    reason = prompt(
+      verb + ' all ' + idxs.length + ' check' + (idxs.length !== 1 ? 's' : '') + ' in ' + category + '?\n\n' +
+      'Optional reason (leave blank if none):',
+      ''
+    );
+    if (reason === null) return;
+    reason = reason.trim() || null;
+  } else {
+    if (!confirm('Unmute all ' + idxs.length + ' muted check' + (idxs.length !== 1 ? 's' : '') + ' in ' + category + '?')) return;
+  }
+
+  try {
+    const res = await fetch('/api/issue-types/' + action, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(action === 'mute' ? { category: category, reason: reason } : { category: category }),
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) throw new Error(result.error || 'Server error');
+    // Mirror the state change locally — all rows in the category flip together.
+    idxs.forEach(x => setRowMuted(x.i, action === 'mute', reason, new Date().toISOString().slice(0, 19)));
+    updateAreaMuteButton(category);
+    refreshMuteSummary();
+    const n = result[action + 'd'] || idxs.length;
+    showToast('success', verb + 'd ' + n + ' check' + (n !== 1 ? 's' : '') + ' in ' + category + '.');
+  } catch (e) {
+    showToast('error', verb + ' all failed: ' + e.message);
+  }
+}
+
+function setRowMuted(i, muted, reason, at) {
+  const r = _controlsData[i];
+  if (!r) return;
+  r.muted        = !!muted;
+  r.muted_reason = muted ? reason : null;
+  r.muted_at     = at || r.muted_at;
+  // Update the row's class
+  const row = document.querySelector('.acc-row[data-idx="' + i + '"]');
+  if (row) row.classList.toggle('acc-row-muted', r.muted);
+  // Update the "Muted" badge visibility
+  const badge = document.getElementById('muted-badge-' + i);
+  if (badge) badge.style.display = r.muted ? 'inline-block' : 'none';
+  // Sync the checkbox + label
+  const cb = row ? row.querySelector('input[data-kind="mute"]') : null;
+  if (cb) cb.checked = r.muted;
+  const lbl = document.getElementById('lbl-mute-' + i);
+  if (lbl) lbl.textContent = r.muted ? 'On' : 'Off';
+  // Tooltip on the toggle
+  if (cb) {
+    const t = r.muted
+      ? 'Muted' + (r.muted_reason ? ' — ' + r.muted_reason : '') + '. Tickets hidden from Live + Community pages.'
+      : 'Mute this check (tickets still fire; just hidden from Live + Community)';
+    const wrap = cb.closest('label.toggle');
+    if (wrap) wrap.title = t;
+  }
+  // Update the acc-card's aggregate data-muted attribute
+  if (row) {
+    const card = row.closest('.acc-card');
+    if (card) {
+      const anyMuted = card.querySelectorAll('.acc-row-muted').length > 0;
+      card.dataset.muted = anyMuted ? '1' : '0';
+    }
+  }
+}
+
+function updateAreaMuteButton(category) {
+  const rowsInArea = _controlsData.filter(r => r.category === category);
+  if (!rowsInArea.length) return;
+  const muted  = rowsInArea.filter(r => r.muted).length;
+  const total  = rowsInArea.length;
+  const allOn  = muted === total;
+  const anyOn  = muted > 0;
+  // Find the button by walking its data-category attribute
+  document.querySelectorAll('.mute-category-btn').forEach(btn => {
+    if (btn.dataset.category === category) {
+      btn.textContent = allOn ? 'Unmute all' : 'Mute all';
+      btn.classList.toggle('active', anyOn);
+    }
+  });
+}
+
+function refreshMuteSummary() {
+  const el = document.getElementById('mute-summary');
+  if (!el) return;
+  const muted = (_controlsData || []).filter(r => r.muted);
+  if (!muted.length) {
+    el.className = 'mute-summary none';
+    el.textContent = 'No checks muted. Use the Mute toggle or "Mute all" to shelve a check without retiring it.';
+    return;
+  }
+  const areas = new Set(muted.map(r => r.category));
+  const held  = muted.reduce((n, r) => n + (r.open_ticket_count || 0), 0);
+  el.className = 'mute-summary';
+  el.innerHTML =
+    '<b>' + muted.length + '</b> check' + (muted.length !== 1 ? 's' : '') +
+    ' muted across <b>' + areas.size + '</b> category' + (areas.size !== 1 ? 's' : '') +
+    ' — <b>' + held + '</b> ticket' + (held !== 1 ? 's' : '') + ' held back from Live + Community pages.';
+}
+
+// ── Retired Checks section (2026-04-16, Phase 4) ─────────────────────────────
+
+async function loadRetiredChecks() {
+  try {
+    const r = await fetch('/api/retired-checks');
+    const data = await r.json();
+    if (!Array.isArray(data)) return;
+    const section = document.getElementById('retired-section');
+    const list = document.getElementById('retired-list');
+    const countEl = document.getElementById('retired-count');
+    if (!data.length) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+    countEl.textContent = data.length + ' retired check' + (data.length !== 1 ? 's' : '');
+
+    // Group retired checks by Category (flat model — no Section/Whole split).
+    // Legacy retired pairs whose `category` is a section-name string are still
+    // grouped by that string; they'll simply appear as their own accordion.
+    const locGroups = {};
+    data.forEach(row => {
+      const loc = row.category || '(no category)';
+      if (!locGroups[loc]) locGroups[loc] = { rows: [] };
+      locGroups[loc].rows.push(row);
+    });
+    const allCats = Object.keys(locGroups).sort();
+
+    let html = '';
+    let ai = 0;  // unique accordion id counter within retired section
+
+    const renderRetiredGroup = (keys) => {
+      keys.forEach(loc => {
+        const group = locGroups[loc];
+        const aid   = 'ret-acc-' + ai;
+        html += `
+        <div class="acc-card" id="${aid}" data-loc="${escHtml(loc)}">
+          <button class="acc-header" onclick="toggleAcc('${aid}')">
+            <span class="acc-loc">${escHtml(loc)}</span>
+            <span class="acc-count">${group.rows.length} retired</span>
+            <span class="acc-chevron">&#x25BE;</span>
+          </button>
+          <div class="acc-body">
+            <table class="controls-table">
+              <thead><tr>
+                <th style="width:28%">Issue Type</th>
+                <th>Retired / Notes / Tickets</th>
+              </tr></thead><tbody>`;
+
+        group.rows.forEach(row => {
+          const dateStr  = row.rejected_at ? row.rejected_at.slice(0, 10) : '';
+          const note     = row.notes || '';
+          const archived = row.archived_ticket_count || 0;
+          const areaEsc  = escHtml(row.category || '').replace(/'/g, "\\'");
+          const itypeEsc = escHtml(row.issue_type || '').replace(/'/g, "\\'");
+          html += `<tr class="acc-row">
+            <td class="check-name">
+              <span class="itype-label">${escHtml(row.issue_type)}</span>
+            </td>
+            <td>
+              <div class="settings-cell">
+                <div class="settings-row">
+                  <span class="settings-label">Retired</span>
+                  <span class="settings-val">${escHtml(dateStr) || '(date unknown)'}</span>
+                  <span class="ticket-count-summary" style="margin-left:10px">
+                    ${archived} archived ticket${archived !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                ${note ? `<div class="settings-row" style="align-items:flex-start">
+                  <span class="settings-label">Notes</span>
+                  <span class="settings-val" style="white-space:pre-wrap;color:#666">${escHtml(note)}</span>
+                </div>` : ''}
+                <div class="settings-row">
+                  <button class="retired-revive" onclick="reviveCheck('${areaEsc}','${itypeEsc}')">Revive</button>
+                </div>
+              </div>
+            </td>
+          </tr>`;
+        });
+
+        html += `</tbody></table></div></div>`;
+        ai++;
+      });
+    };
+
+    renderRetiredGroup(allCats);
+
+    list.innerHTML = html;
+  } catch(e) {
+    console.error('loadRetiredChecks error:', e);
+  }
+}
+
+async function reviveCheck(category, itype) {
+  if (!confirm('Revive "' + category + ' / ' + itype + '"?\n\nThis restores the check to Active. Old tickets remain archived — the revived check will generate new tickets on the next run.')) return;
+  try {
+    const r = await fetch('/api/issue-types/revive', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ category, issue_type: itype }),
+    });
+    const result = await r.json();
+    if (!r.ok || result.error) throw new Error(result.error || 'Server error');
+    showToast('success', 'Revived "' + category + ' / ' + itype + '".');
+    loadRetiredChecks();
+    loadControls();
+  } catch(e) {
+    showToast('error', 'Revive failed: ' + e.message);
+  }
+}
+
+// Auto-load controls when the QA Tools page loads
+window.addEventListener('DOMContentLoaded', () => {
+  loadControls();
+  loadRetiredChecks();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Templates — Cedarline QA{% endblock %}
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/templates.css') }}">
+{% endblock %}
+{% block content %}
+<div class="container">
+
+  <div class="templates-header">
+    <div class="templates-title-row">
+      <h2>Templates</h2>
+      <span class="templates-count" id="templates-count">—</span>
+    </div>
+    <p class="templates-subtitle">
+      Captured patterns route matching findings here automatically. Muted
+      templates hide from Live Tickets while you fix the source; community
+      pages always see them so each community can resolve its own posting.
+      Mark a template Fixed (unmute) to watch for regressions.
+    </p>
+  </div>
+
+  <div id="templates-body">
+    <div class="loading">Loading&hellip;</div>
+  </div>
+
+  <!-- Retire confirmation modal.
+       Phase 3, 2026-04-21. Retire is destructive in the sense that it
+       moves the (Templates, name) pair to rejected_issues and DELETEs the
+       email_controls row — tickets stay with their pair but filter
+       dropdowns no longer include it. The 'also resolve open' checkbox
+       bundles a bulk-resolve into the same transaction so the admin can
+       clean up their open queue without a second action. -->
+  <div id="retire-modal" class="tmpl-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="retire-modal-title">
+    <div class="tmpl-modal-backdrop" onclick="closeRetireModal()"></div>
+    <div class="tmpl-modal-panel">
+      <div class="tmpl-modal-header">
+        <h3 id="retire-modal-title">Retire template</h3>
+        <button class="tmpl-modal-close" onclick="closeRetireModal()" aria-label="Close">&times;</button>
+      </div>
+      <div class="tmpl-modal-body">
+        <p class="tmpl-modal-intro">
+          Retiring moves <strong id="retire-name-preview"></strong> to the
+          rejected list. Matching findings will stop routing here on future
+          runs. Tickets keep their Templates classification for audit
+          history but won&rsquo;t appear in filter dropdowns.
+        </p>
+        <label class="tmpl-modal-check">
+          <input type="checkbox" id="retire-also-resolve">
+          <span>Also resolve the <strong id="retire-open-count">0</strong> currently-open ticket(s) linked to this template.</span>
+        </label>
+        <div class="tmpl-modal-status" id="retire-status"></div>
+      </div>
+      <div class="tmpl-modal-footer">
+        <button class="btn-sm btn-clear" onclick="closeRetireModal()">Cancel</button>
+        <button class="btn-sm btn-danger" id="retire-confirm-btn" onclick="confirmRetireTemplate()">Retire</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+  // showToast — inline so templates.js can flash status messages without
+  // importing anything. Mirrors the pattern used in community_detail.html
+  // and tickets.html.
+  function showToast(type, msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { t.className = 'toast'; }, 4200);
+  }
+</script>
+<script src="{{ url_for('static', filename='js/templates.js') }}"></script>
+{% endblock %}

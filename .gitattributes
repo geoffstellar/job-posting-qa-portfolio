@@ -1,0 +1,14 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Files that get executed inside Linux containers (Fly.io / Docker) MUST use
+# LF line endings — Linux reads `#!/bin/sh\r` literally as the interpreter
+# path and fails with "No such file or directory" when launching a script
+# whose shebang has CRLF. This bit Geoff's local `flyctl deploy` on
+# 2026-04-28: Windows checkouts with core.autocrlf=true would CRLF-fy
+# entrypoint.sh, then a local-machine deploy would ship a broken image.
+# Forcing eol=lf via .gitattributes overrides core.autocrlf so contributors
+# on any OS get the same content in the working tree.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+entrypoint* text eol=lf

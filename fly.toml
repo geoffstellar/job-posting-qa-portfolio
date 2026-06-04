@@ -1,0 +1,31 @@
+# fly.toml - Fly.io app configuration for the QA dashboard.
+# See https://fly.io/docs/reference/configuration/ for the full reference.
+
+app = 'job-posting-qa-portfolio'
+primary_region = 'sjc'
+
+[build]
+
+[http_service]
+  internal_port = 5000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  # Scale to zero when idle (cost-free for a demo). Set to 1 to keep one
+  # machine always-on if you'd rather avoid the ~300ms cold start.
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
+
+[[mounts]]
+  source = "qa_data"
+  destination = "/app/data"
+  initial_size = "1gb"
+
+[deploy]
+  release_command = "alembic upgrade head"

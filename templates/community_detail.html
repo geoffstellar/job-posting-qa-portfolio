@@ -1,0 +1,830 @@
+{% extends "base.html" %}
+{% block title %}Community — Cedarline QA{% endblock %}
+{% block extra_css %}
+    .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 60px; }
+    .back-link { display:inline-flex;align-items:center;gap:5px;color:#666;font-size:13px;
+                 text-decoration:none;margin-bottom:20px; }
+    .back-link:hover { color:#1a1a2e; }
+    .page-header { display:flex;align-items:flex-start;justify-content:space-between;
+                   flex-wrap:wrap;gap:12px;margin-bottom:28px; }
+    .page-header h1 { font-size:22px;font-weight:700; }
+    .header-stats { display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px; }
+    .sev-pill {
+      padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;
+      letter-spacing:.3px;white-space:nowrap;
+    }
+    .sev-pill.CRITICAL { background:#fde8e8;color:#991b1b; }
+    .sev-pill.HIGH     { background:#fff3e0;color:#9a4500; }
+    .sev-pill.MEDIUM   { background:#e8f5e9;color:#1b5e20; }
+    .sev-pill.LOW      { background:#f0f4ff;color:#3730a3; }
+    .sev-pill.zero     { opacity:.35; }
+    .filter-bar { display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap; }
+    .filter-btn {
+      padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid #ddd;
+      background:white;cursor:pointer;transition:all .15s;
+    }
+    .filter-btn.active { background:#1a1a2e;color:white;border-color:#1a1a2e; }
+    .view-toggle-row { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+    .view-toggle-row label { font-size:12px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.4px; }
+    .view-btn {
+      padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;
+      border:1.5px solid #ddd; background:white; cursor:pointer; transition:all .15s; color:#555;
+    }
+    .view-btn.active { background:#1a1a2e; color:white; border-color:#1a1a2e; }
+    /* Location grouping */
+    .category-section { margin-bottom:28px; }
+    .category-header {
+      display:flex;align-items:center;gap:10px;
+      padding:10px 4px;margin-bottom:10px;
+      border-bottom:2px solid #e4e6ea;
+    }
+    .category-title { font-size:16px;font-weight:800;color:#1a1a2e;flex:1; }
+    .category-tag {
+      font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+      background:#e8eaf0;color:#666;text-transform:uppercase;letter-spacing:.4px;
+    }
+    .category-count { font-size:12px;color:#888; }
+
+    /* Issue-type sub-sections within a location */
+    .check-section { margin-bottom:14px;margin-left:8px; }
+    .check-header {
+      display:flex;align-items:center;gap:10px;
+      background:white;border:1px solid #e4e6ea;border-radius:10px 10px 0 0;
+      padding:12px 16px;border-bottom:none;
+    }
+    .check-title { font-weight:700;font-size:13px;flex:1; }
+    .check-count { font-size:12px;color:#888; }
+    .fix-block {
+      background:#f8f9fb;border:1px solid #e4e6ea;border-top:none;
+      padding:10px 18px;font-size:12px;color:#555;line-height:1.5;
+    }
+    .fix-block strong { color:#1a1a2e; }
+    .ticket-rows { background:white;border:1px solid #e4e6ea;border-top:none;border-radius:0 0 12px 12px; }
+    .ticket-row {
+      padding:13px 18px;border-top:1px solid #f0f1f4;display:flex;
+      align-items:flex-start;gap:12px;transition:opacity .3s;
+    }
+    .ticket-row:first-child { border-top:none; }
+    .ticket-row.resolved { opacity:.35;pointer-events:none; }
+    .ticket-main { flex:1; min-width:0; }
+    .ticket-meta {
+      font-size:11px;color:#888;margin-bottom:4px;
+      display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    }
+    .ticket-meta a { color:#C89B3C;text-decoration:none;font-weight:600; }
+    .ticket-meta a:hover { text-decoration:underline; }
+    .ticket-summary { font-size:13px;color:#1a1a2e;line-height:1.45; }
+    .ticket-offending {
+      margin-top:5px;font-size:12px;color:#5d4037;font-style:italic;
+      background:#fff8e6;border-left:3px solid #C89B3C;
+      border-radius:0 5px 5px 0;padding:5px 9px;
+    }
+    .ticket-actions { display:flex;align-items:flex-start;padding-top:1px; }
+    .btn-resolve {
+      padding:5px 14px;background:#1a1a2e;color:white;
+      border:none;border-radius:7px;font-size:12px;font-weight:700;
+      cursor:pointer;white-space:nowrap;transition:background .15s;
+    }
+    .btn-resolve:hover:not(:disabled) { background:#2d2d50; }
+    .btn-resolve:disabled { opacity:.5;cursor:default; }
+    .resolved-label { font-size:12px;color:#2e7d32;font-weight:700;padding:5px 4px; }
+    .flagged-label { font-size:12px;color:#856404;font-weight:700;padding:5px 4px; }
+    .btn-flag-comm {
+      padding:5px 14px;background:white;color:#856404;
+      border:1.5px solid #e0c97a;border-radius:7px;font-size:12px;font-weight:700;
+      cursor:pointer;white-space:nowrap;transition:all .15s;margin-left:6px;
+    }
+    .btn-flag-comm:hover:not(:disabled) { background:#fff8e1;border-color:#856404; }
+    .btn-flag-comm:disabled { opacity:.5;cursor:default; }
+    .comm-flag-panel {
+      display:none;margin-top:8px;padding:10px 14px;
+      background:#fffdf5;border:1px solid #e0c97a;border-radius:8px;
+    }
+    .comm-flag-panel.open { display:block; }
+    .comm-flag-panel label { font-size:12px;font-weight:600;color:#856404;display:block;margin-bottom:5px; }
+    .comm-flag-panel textarea {
+      width:100%;min-height:56px;border:1px solid #e0c97a;border-radius:6px;
+      padding:7px 10px;font-size:12px;resize:vertical;font-family:inherit;
+    }
+    .comm-flag-panel textarea:focus { border-color:#856404;outline:none; }
+    .comm-flag-actions { display:flex;gap:8px;margin-top:8px;align-items:center; }
+    .btn-ack-comm {
+      padding:5px 14px;background:white;color:#3730a3;
+      border:1.5px solid #c7d2fe;border-radius:7px;font-size:12px;font-weight:700;
+      cursor:pointer;white-space:nowrap;transition:all .15s;margin-left:6px;
+    }
+    .btn-ack-comm:hover:not(:disabled) { background:#eef2ff;border-color:#3730a3; }
+    .btn-ack-comm:disabled { opacity:.5;cursor:default; }
+    .comm-ack-panel {
+      display:none;margin-top:8px;padding:10px 14px;
+      background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;
+    }
+    .comm-ack-panel.open { display:block; }
+    .comm-ack-panel label { font-size:12px;font-weight:600;color:#3730a3;display:block;margin-bottom:5px; }
+    .comm-ack-panel select, .comm-ack-panel textarea {
+      width:100%;border:1px solid #c7d2fe;border-radius:6px;
+      padding:7px 10px;font-size:12px;font-family:inherit;background:#fff;
+    }
+    .comm-ack-panel textarea { min-height:52px;resize:vertical;margin-top:6px; }
+    .ack-status-msg { font-size:12px;font-weight:600; }
+    .ack-status-msg.error { color:#991b1b; }
+    .comm-notes-display {
+      margin-top:6px;padding:6px 10px;background:#f8f9fb;border:1px solid #e4e6ea;
+      border-radius:6px;font-size:12px;color:#555;line-height:1.45;
+    }
+    .comm-notes-display strong { color:#1a1a2e;font-size:11px;text-transform:uppercase;letter-spacing:.3px; }
+    /* Audit-trail attribution (Phase 3, 2026-04-27) */
+    .comm-last-action {
+      margin-top:6px;padding:5px 10px;background:#f6f8fb;border:1px solid #e3e7ee;
+      border-radius:6px;font-size:11px;color:#4b5563;line-height:1.4;
+    }
+    .comm-last-action strong { color:#1a1a2e;font-weight:600; }
+    /* Community notes UI (Migration 2026-04-20) */
+    .notes-section { margin-top:10px;padding-top:8px;border-top:1px solid #eef0f4; }
+    .notes-toggle {
+      background:none;border:none;padding:0;font-size:12px;font-weight:600;
+      color:#3730a3;cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+    }
+    .notes-toggle:hover { text-decoration:underline; }
+    .notes-body { display:none;margin-top:8px; }
+    .notes-body.open { display:block; }
+    .note-item {
+      padding:7px 10px;background:#fafbfc;border:1px solid #eef0f4;
+      border-radius:6px;font-size:12px;color:#333;margin-bottom:6px;
+      line-height:1.45;position:relative;
+    }
+    .note-meta { font-size:10px;color:#6a6a82;font-weight:600;margin-bottom:3px;display:flex;justify-content:space-between;gap:8px;align-items:center; }
+    .note-meta-name { color:#1a1a2e; }
+    .note-text { white-space:pre-wrap;word-break:break-word; }
+    .note-admin-actions { display:inline-flex;gap:4px; }
+    .note-admin-btn {
+      background:none;border:none;padding:1px 4px;font-size:11px;cursor:pointer;
+      color:#6a6a82;font-weight:600;
+    }
+    .note-admin-btn:hover { color:#3730a3; }
+    .note-admin-btn.danger:hover { color:#991b1b; }
+    .note-add-form { display:flex;gap:6px;align-items:flex-start;margin-top:4px; }
+    .note-add-input {
+      flex:1;border:1px solid #d1d5db;border-radius:6px;padding:6px 10px;
+      font-size:12px;font-family:inherit;min-height:34px;max-height:120px;resize:vertical;
+    }
+    .note-add-input:focus { border-color:#3730a3;outline:none; }
+    .note-add-submit {
+      background:#3730a3;color:#fff;border:none;padding:7px 14px;border-radius:6px;
+      font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+    }
+    .note-add-submit:hover:not(:disabled) { background:#1e1b76; }
+    .note-add-submit:disabled { opacity:.5;cursor:default; }
+    .note-empty { font-size:12px;color:#9a9aaa;font-style:italic;margin-bottom:8px; }
+    .note-edit-input {
+      width:100%;border:1px solid #3730a3;border-radius:6px;padding:5px 8px;
+      font-size:12px;font-family:inherit;min-height:60px;resize:vertical;
+    }
+    .empty { color:#888;font-size:14px;margin-top:40px;text-align:center; }
+    .loading { color:#888;font-size:14px;margin-top:40px; }
+    .toast {
+      display:none;position:fixed;bottom:28px;right:28px;
+      padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;
+      z-index:999;box-shadow:0 4px 18px rgba(0,0,0,.18);
+    }
+    .toast.success { display:block;background:#1b5e20;color:white; }
+    .toast.error   { display:block;background:#991b1b;color:white; }
+    /* Job view reuses category styles */
+    .loc-section { margin-bottom:28px; }
+    .loc-header {
+      display:flex;align-items:center;gap:10px;
+      padding:10px 14px;background:#f8f9fc;
+      border-bottom:2px solid #e4e6ea;margin-bottom:0;
+    }
+    .loc-title { font-size:16px;font-weight:800;color:#1a1a2e;flex:1; }
+    .loc-count { font-size:12px;color:#888; }
+
+{% endblock %}
+{% block content %}
+<div class="container">
+  <a class="back-link" href="/communities">← All Communities</a>
+  <div class="page-header">
+    <div>
+      <h1 id="comm-name">Loading…</h1>
+      <div class="header-stats" id="header-stats"></div>
+    </div>
+  </div>
+
+  <!-- QA Tickets view -->
+  <div id="qa-view">
+    <div class="view-toggle-row">
+      <label>Group by:</label>
+      <button class="view-btn active" id="vbtn-category"      onclick="setView('category')">Area</button>
+      <button class="view-btn"        id="vbtn-job"      onclick="setView('job')">Job</button>
+      <button class="view-btn"        id="vbtn-severity"  onclick="setView('severity')">Severity</button>
+    </div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div id="content"><div class="loading">Loading tickets…</div></div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(type, msg) {
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  setTimeout(() => { t.className = 'toast'; }, 4000);
+}
+
+// Parse community name from URL path: /community/<name>
+const _commName = decodeURIComponent(location.pathname.replace(/^\/community\//, ''));
+document.title = _commName + ' — Cedarline QA';
+document.getElementById('comm-name').textContent = _commName;
+
+let _groups = [];
+let _activeSev = 'ALL';
+let _viewMode = 'category';        // tickets group-by: 'category' | 'job' | 'severity'
+
+function setView(mode) {
+  _viewMode = mode;
+  ['category','job','severity'].forEach(m => {
+    const btn = document.getElementById('vbtn-' + m);
+    if (btn) btn.classList.toggle('active', m === mode);
+  });
+  renderGroups();
+}
+
+async function loadCommunity() {
+  const content = document.getElementById('content');
+  try {
+    const r = await fetch('/api/community/' + encodeURIComponent(_commName) + '/tickets');
+    _groups = await r.json();
+    if (!Array.isArray(_groups)) throw new Error(_groups.error || 'Unexpected response');
+    updateStats();
+    buildFilterBar();
+    renderGroups();
+  } catch(e) {
+    content.innerHTML = '<div class="empty">Could not load tickets: ' + escHtml(e.message) + '</div>';
+  }
+}
+
+function allTickets() {
+  // Flatten nested category -> issue_type -> tickets structure
+  const out = [];
+  _groups.forEach(ar => ar.issue_types.forEach(it => it.tickets.forEach(t => out.push(t))));
+  return out;
+}
+
+function updateStats() {
+  // Back-compat shim: routes header-stat callers through renderHeaderStats.
+  renderHeaderStats();
+}
+
+function renderHeaderStats() {
+  renderQaStats(document.getElementById('header-stats'));
+}
+
+function renderQaStats(el) {
+  let crit = 0, high = 0, med = 0, low = 0;
+  allTickets().forEach(t => {
+    if      (t.severity === 'CRITICAL') crit++;
+    else if (t.severity === 'HIGH')     high++;
+    else if (t.severity === 'LOW')      low++;
+    else                                med++;
+  });
+  const total = crit + high + med + low;
+  el.innerHTML = [
+    `<span class="sev-pill CRITICAL${crit ? '' : ' zero'}">${crit} CRITICAL</span>`,
+    `<span class="sev-pill HIGH${high     ? '' : ' zero'}">${high} HIGH</span>`,
+    `<span class="sev-pill MEDIUM${med    ? '' : ' zero'}">${med} MEDIUM</span>`,
+    `<span class="sev-pill LOW${low       ? '' : ' zero'}">${low} LOW</span>`,
+  ].join('') + `<span style="font-size:12px;color:#888;margin-left:4px">${total} open</span>`;
+}
+
+function buildFilterBar() {
+  const sevs = new Set(allTickets().map(t => t.severity));
+  const bar = document.getElementById('filter-bar');
+  const opts = ['ALL', ...['CRITICAL','HIGH','MEDIUM','LOW'].filter(s => sevs.has(s))];
+  bar.innerHTML = opts.map(s =>
+    `<button class="filter-btn${s === _activeSev ? ' active' : ''}" onclick="setFilter('${s}')">${s === 'ALL' ? 'All Severities' : s}</button>`
+  ).join('');
+}
+
+function setFilter(sev) {
+  _activeSev = sev;
+  buildFilterBar();
+  renderGroups();
+}
+
+function offText(t) {
+  const o = t.offending_text || '';
+  try { const p = JSON.parse(o); return p.text || ''; } catch(e) { return o; }
+}
+
+// ── Audit-trail attribution (Phase 3, 2026-04-27) ────────────────────────────
+// Mirrors tickets.js renderLastAction. The community page is a viewer-only
+// surface (no expandable history drawer here — that lives on /tickets), so
+// we render just the attribution line, no toggle button.
+
+function _formatActionVerb(action) {
+  const map = {
+    resolve:        'Resolved',
+    acknowledge:    'Acknowledged',
+    flag_incorrect: 'Flagged as incorrect',
+    restore:        'Restored',
+    archive:        'Archived',
+  };
+  return map[action] || action;
+}
+
+function _formatRelativeTime(iso) {
+  if (!iso) return '';
+  const t = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+  if (isNaN(t.getTime())) return iso;
+  const diffSec = Math.max(0, (Date.now() - t.getTime()) / 1000);
+  if (diffSec < 60)        return 'just now';
+  if (diffSec < 3600)      return Math.floor(diffSec / 60) + ' min ago';
+  if (diffSec < 86400)     return Math.floor(diffSec / 3600) + ' hr ago';
+  if (diffSec < 86400 * 7) return Math.floor(diffSec / 86400) + ' days ago';
+  return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function renderLastActionLine(t) {
+  if (!t.last_action || !t.last_action_at) return '';
+  const verb = _formatActionVerb(t.last_action);
+  const who  = t.last_action_by_name || t.last_action_by_email || 'Unknown user';
+  const when = _formatRelativeTime(t.last_action_at);
+  return `<div class="comm-last-action">
+    ${escHtml(verb)} by <strong>${escHtml(who)}</strong> · ${escHtml(when)}
+  </div>`;
+}
+
+function renderTicketRow(t) {
+  const off     = offText(t);
+  const tid     = escHtml(t.ticket_id);
+  const urlLink = t.job_url
+    ? `<a href="${escHtml(t.job_url)}" target="_blank" onclick="event.stopPropagation()">View on Hireology ↗</a>`
+    : '';
+  const notesHtml = t.notes
+    ? `<div class="comm-notes-display"><strong>Notes:</strong> ${escHtml(t.notes)}</div>`
+    : '';
+  const lastActionHtml = renderLastActionLine(t);
+  return `<div class="ticket-row" id="trow-${tid}">
+    <div class="ticket-main">
+      <div class="ticket-meta">
+        <span class="sev-pill ${escHtml(t.severity)}">${escHtml(t.severity)}</span>
+        <span>${escHtml(t.job_title||'')}</span>
+        ${t.req_id ? `<span>· Req #${escHtml(String(t.req_id))}</span>` : ''}
+        ${urlLink}
+      </div>
+      <div class="ticket-summary">${escHtml(t.issue_summary||'')}</div>
+      ${off ? `<div class="ticket-offending">"${escHtml(off)}"</div>` : ''}
+      ${notesHtml}
+      ${lastActionHtml}
+      <div class="comm-flag-panel" id="cflag-panel-${tid}">
+        <label>Why is this ticket incorrect?</label>
+        <textarea id="cflag-notes-${tid}" placeholder="Optional — explain why this ticket doesn't apply…"></textarea>
+        <div class="comm-flag-actions">
+          <button class="btn-resolve" onclick="confirmFlagIncorrect('${tid}')">Confirm Flag</button>
+          <button class="btn-flag-comm" onclick="cancelFlag('${tid}')" style="border-color:#ccc;color:#666;">Cancel</button>
+          <span id="cflag-status-${tid}" style="font-size:12px;font-weight:600;"></span>
+        </div>
+      </div>
+      <div class="comm-ack-panel" id="cack-panel-${tid}">
+        <label>Why acknowledge this instead of fixing?</label>
+        <select id="cack-cat-${tid}" onchange="onAckCategoryChange('${tid}')">
+          <option value="">— Select reason —</option>
+          <option value="Correct in context">Correct in context</option>
+          <option value="Rep/community preference">Rep/community preference</option>
+          <option value="Already addressed elsewhere">Already addressed elsewhere</option>
+          <option value="Other">Other (explain below)</option>
+        </select>
+        <textarea id="cack-detail-${tid}" placeholder="Free-text detail (required if 'Other')" style="display:none;"></textarea>
+        <div class="comm-flag-actions">
+          <button class="btn-resolve" onclick="confirmAcknowledge('${tid}')">Confirm Acknowledge</button>
+          <button class="btn-ack-comm" onclick="cancelAck('${tid}')" style="border-color:#ccc;color:#666;">Cancel</button>
+          <span class="ack-status-msg" id="cack-status-${tid}"></span>
+        </div>
+      </div>
+      <div class="notes-section">
+        <button class="notes-toggle" onclick="toggleNotes('${tid}')">
+          <span id="notes-chev-${tid}">▸</span>
+          <span>Notes <span id="notes-count-${tid}" style="color:#6a6a82;font-weight:500">·&nbsp;${t.note_count != null ? t.note_count : '—'}</span></span>
+        </button>
+        <div class="notes-body" id="notes-body-${tid}">
+          <div id="notes-list-${tid}"></div>
+          <div class="note-add-form">
+            <textarea class="note-add-input" id="note-new-${tid}" placeholder="Add a note&hellip;" rows="1"></textarea>
+            <button class="note-add-submit" onclick="addNote('${tid}')">Post</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ticket-actions" id="tactions-${tid}">
+      <button class="btn-resolve" onclick="resolveTicket('${tid}')">✓ Resolve</button>
+      ${(() => { const s = (t.severity || '').toUpperCase(); return (s === 'MEDIUM' || s === 'LOW') ? `<button class="btn-ack-comm" id="cack-btn-${tid}" onclick="openAckPanel('${tid}')">✓ Acknowledge</button>` : ''; })()}
+      <button class="btn-flag-comm" id="cflag-btn-${tid}" onclick="openFlagPanel('${tid}')">⚑ Flag Incorrect</button>
+    </div>
+  </div>`;
+}
+
+function renderGroups() {
+  if (_viewMode === 'job')      { renderByJob();      return; }
+  if (_viewMode === 'severity') { renderBySeverity(); return; }
+
+  const content = document.getElementById('content');
+
+  // Apply severity filter — rebuild structure without mutating _groups
+  const filtered = _groups.map(ar => ({
+    ...ar,
+    issue_types: ar.issue_types
+      .map(it => ({
+        ...it,
+        tickets: _activeSev === 'ALL' ? it.tickets : it.tickets.filter(t => t.severity === _activeSev)
+      }))
+      .filter(it => it.tickets.length > 0)
+  })).filter(ar => ar.issue_types.length > 0);
+
+  if (!filtered.length) {
+    content.innerHTML = '<div class="empty">No open tickets' + (_activeSev !== 'ALL' ? ' at this severity' : '') + '.</div>';
+    return;
+  }
+
+  let html = '';
+  filtered.forEach(ar => {
+    // Area header
+    const arTotal = ar.issue_types.reduce((n, it) => n + it.tickets.length, 0);
+    html += `<div class="category-section">
+      <div class="category-header">
+        <span class="category-title">${escHtml(ar.category)}</span>
+        <span class="category-tag">${ar.cross ? 'cross-cutting' : 'section'}</span>
+        <span class="category-count">${arTotal} ticket${arTotal !== 1 ? 's' : ''}</span>
+      </div>`;
+
+    // Issue-type groups within this category
+    ar.issue_types.forEach(it => {
+      const fixHtml = it.fix_instruction
+        ? `<div class="fix-block"><strong>What to fix:</strong> ${escHtml(it.fix_instruction)}</div>`
+        : '';
+      html += `<div class="check-section">
+        <div class="check-header">
+          <span class="check-title">${escHtml(it.issue_type)}</span>
+          <span class="check-count">${it.tickets.length} ticket${it.tickets.length !== 1 ? 's' : ''}</span>
+        </div>
+        ${fixHtml}
+        <div class="ticket-rows">${it.tickets.map(renderTicketRow).join('')}</div>
+      </div>`;
+    });
+    html += `</div>`; // .category-section
+  });
+
+  content.innerHTML = html;
+}
+
+function renderByJob() {
+  const content = document.getElementById('content');
+  // Build job map: req_id -> { title, job_url, tickets[] }
+  const SEV_ORDER = {CRITICAL:0,HIGH:1,MEDIUM:2,LOW:3};
+  const jobMap = {};
+  allTickets().forEach(t => {
+    const sev = t.severity || 'MEDIUM';
+    if (_activeSev !== 'ALL' && sev !== _activeSev) return;
+    const key = t.req_id || t.job_title || 'Unknown';
+    if (!jobMap[key]) jobMap[key] = { title: t.job_title || key, job_url: t.job_url || '', tickets: [] };
+    jobMap[key].tickets.push(t);
+  });
+  const jobs = Object.values(jobMap);
+  if (!jobs.length) {
+    content.innerHTML = '<div class="empty">No open tickets' + (_activeSev !== 'ALL' ? ' at this severity' : '') + '.</div>';
+    return;
+  }
+  // Sort jobs by worst severity first, then title
+  jobs.forEach(j => j.tickets.sort((a,b) => (SEV_ORDER[a.severity]??9) - (SEV_ORDER[b.severity]??9)));
+  jobs.sort((a,b) => {
+    const wa = SEV_ORDER[a.tickets[0]?.severity] ?? 9;
+    const wb = SEV_ORDER[b.tickets[0]?.severity] ?? 9;
+    return wa !== wb ? wa - wb : a.title.localeCompare(b.title);
+  });
+
+  let html = '';
+  jobs.forEach(j => {
+    const urlLink = j.job_url ? `<a href="${escHtml(j.job_url)}" target="_blank" style="font-size:12px;color:#1a1a2e;margin-left:8px">View ↗</a>` : '';
+    html += `<div class="loc-section">
+      <div class="loc-header">
+        <span class="loc-title">${escHtml(j.title)}</span>${urlLink}
+        <span class="loc-count">${j.tickets.length} ticket${j.tickets.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="check-section" style="margin:0">
+        <div class="ticket-rows">${j.tickets.map(t => {
+          const itype = t.issue_type || t.check_type || '';
+          const row   = renderTicketRow(t);
+          // Inject issue type label into ticket meta
+          return row.replace('<div class="ticket-meta">', `<div class="ticket-meta"><span class="sev-pill" style="background:#f0f1f7;color:#555">${escHtml(itype)}</span>`);
+        }).join('')}</div>
+      </div>
+    </div>`;
+  });
+  content.innerHTML = html;
+}
+
+function renderBySeverity() {
+  const content  = document.getElementById('content');
+  const sevOrder = ['CRITICAL','HIGH','MEDIUM','LOW'];
+  const sevMap   = {};
+  allTickets().forEach(t => {
+    const sev = t.severity || 'MEDIUM';
+    if (_activeSev !== 'ALL' && sev !== _activeSev) return;
+    if (!sevMap[sev]) sevMap[sev] = [];
+    sevMap[sev].push(t);
+  });
+  const groups = sevOrder.filter(s => sevMap[s]);
+  if (!groups.length) {
+    content.innerHTML = '<div class="empty">No open tickets' + (_activeSev !== 'ALL' ? ' at this severity' : '') + '.</div>';
+    return;
+  }
+
+  const SEV_COLORS = {CRITICAL:'#fef2f2',HIGH:'#fff7ed',MEDIUM:'#fffbeb',LOW:'#f0f4ff'};
+  let html = '';
+  groups.forEach(sev => {
+    const tickets = sevMap[sev];
+    html += `<div class="loc-section">
+      <div class="loc-header" style="background:${SEV_COLORS[sev]||'#f8f9fc'}">
+        <span class="loc-title">${sev}</span>
+        <span class="loc-count">${tickets.length} ticket${tickets.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="check-section" style="margin:0">
+        <div class="ticket-rows">${tickets.map(t => {
+          const itype = t.issue_type || t.check_type || '';
+          const row   = renderTicketRow(t);
+          return row.replace('<div class="ticket-meta">', `<div class="ticket-meta"><span class="sev-pill" style="background:#f0f1f7;color:#555">${escHtml(itype)}</span>`);
+        }).join('')}</div>
+      </div>
+    </div>`;
+  });
+  content.innerHTML = html;
+}
+
+async function resolveTicket(ticketId) {
+  const row     = document.getElementById('trow-'     + ticketId);
+  const actions = document.getElementById('tactions-' + ticketId);
+  const btn     = actions?.querySelector('.btn-resolve');
+  if (!btn) return;
+
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  try {
+    const r = await fetch('/api/tickets/' + encodeURIComponent(ticketId) + '/resolve', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status: 'Resolved' })
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'Server error');
+
+    actions.innerHTML = '<span class="resolved-label">✓ Resolved</span>';
+    if (row) row.classList.add('resolved');
+    showToast('success', 'Ticket resolved.');
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '✓ Resolve';
+    showToast('error', 'Could not resolve: ' + e.message);
+  }
+}
+
+function openFlagPanel(tid) {
+  const panel = document.getElementById('cflag-panel-' + tid);
+  const btn   = document.getElementById('cflag-btn-' + tid);
+  if (panel) panel.classList.add('open');
+  if (btn) btn.disabled = true;
+}
+
+function cancelFlag(tid) {
+  const panel = document.getElementById('cflag-panel-' + tid);
+  const btn   = document.getElementById('cflag-btn-' + tid);
+  if (panel) panel.classList.remove('open');
+  if (btn) btn.disabled = false;
+}
+
+async function confirmFlagIncorrect(tid) {
+  const panel  = document.getElementById('cflag-panel-' + tid);
+  const reason = (document.getElementById('cflag-notes-' + tid)?.value || '').trim();
+  const status = document.getElementById('cflag-status-' + tid);
+  const row    = document.getElementById('trow-' + tid);
+  const actions = document.getElementById('tactions-' + tid);
+
+  if (status) { status.textContent = 'Saving…'; status.style.color = '#888'; }
+
+  try {
+    const r = await fetch('/api/tickets/' + encodeURIComponent(tid) + '/flag-incorrect', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ reason })
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'Server error');
+
+    if (panel) panel.style.display = 'none';
+    if (actions) actions.innerHTML = '<span class="flagged-label">⚑ Flagged as Incorrect</span>';
+    if (row) { row.style.transition = 'opacity .4s'; row.style.opacity = '.35'; }
+    showToast('success', 'Ticket flagged as incorrect.');
+  } catch(e) {
+    if (status) { status.textContent = 'Error: ' + e.message; status.style.color = '#991b1b'; }
+    const btn = document.getElementById('cflag-btn-' + tid);
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ── Acknowledge (Medium/Low only, Migration 2026-04-20) ────────────────────
+function openAckPanel(tid) {
+  const panel = document.getElementById('cack-panel-' + tid);
+  const btn   = document.getElementById('cack-btn-' + tid);
+  const fpanel = document.getElementById('cflag-panel-' + tid);
+  if (!panel) return;
+  // Close the flag panel if it happened to be open — only one at a time.
+  if (fpanel) fpanel.classList.remove('open');
+  const opening = !panel.classList.contains('open');
+  panel.classList.toggle('open', opening);
+  if (btn) btn.textContent = opening ? '✕ Cancel' : '✓ Acknowledge';
+  if (opening) {
+    const sel = document.getElementById('cack-cat-' + tid);
+    if (sel) { sel.value = ''; sel.focus(); }
+    const det = document.getElementById('cack-detail-' + tid);
+    if (det) { det.value = ''; det.style.display = 'none'; }
+    const st = document.getElementById('cack-status-' + tid);
+    if (st) { st.textContent = ''; st.className = 'ack-status-msg'; }
+  }
+}
+
+function cancelAck(tid) {
+  const panel = document.getElementById('cack-panel-' + tid);
+  const btn   = document.getElementById('cack-btn-' + tid);
+  if (panel) panel.classList.remove('open');
+  if (btn) btn.textContent = '✓ Acknowledge';
+}
+
+function onAckCategoryChange(tid) {
+  const sel = document.getElementById('cack-cat-' + tid);
+  const det = document.getElementById('cack-detail-' + tid);
+  if (!sel || !det) return;
+  if (sel.value === 'Other') { det.style.display = 'block'; det.focus(); }
+  else { det.style.display = 'none'; }
+}
+
+async function confirmAcknowledge(tid) {
+  const sel = document.getElementById('cack-cat-' + tid);
+  const det = document.getElementById('cack-detail-' + tid);
+  const st  = document.getElementById('cack-status-' + tid);
+  const panel = document.getElementById('cack-panel-' + tid);
+  const row = document.getElementById('trow-' + tid);
+  const actions = document.getElementById('tactions-' + tid);
+  const category = sel ? sel.value : '';
+  const detail   = det ? det.value.trim() : '';
+  if (!category) { if (st) { st.textContent = 'Pick a reason first.'; st.className = 'ack-status-msg error'; } return; }
+  if (category === 'Other' && !detail) { if (st) { st.textContent = 'Explain the reason.'; st.className = 'ack-status-msg error'; } return; }
+  if (st) { st.textContent = 'Saving…'; st.className = 'ack-status-msg'; }
+  try {
+    const r = await fetch('/api/tickets/' + encodeURIComponent(tid) + '/acknowledge', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ reason_category: category, reason_detail: detail })
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'Server error');
+    if (panel) panel.style.display = 'none';
+    if (actions) actions.innerHTML = '<span class="flagged-label" style="color:#3730a3;">✓ Acknowledged</span>';
+    if (row) { row.style.transition = 'opacity .4s'; row.style.opacity = '.35'; }
+    showToast('success', 'Ticket acknowledged.');
+  } catch(e) {
+    if (st) { st.textContent = 'Error: ' + e.message; st.className = 'ack-status-msg error'; }
+  }
+}
+
+// ── Ticket notes (Migration 2026-04-20) ────────────────────────────────────
+const IS_ADMIN = {{ 'true' if current_user and current_user.is_admin else 'false' }};
+const CURRENT_USER_ID = {{ current_user.id if current_user else 'null' }};
+
+async function toggleNotes(tid) {
+  const body = document.getElementById('notes-body-' + tid);
+  const chev = document.getElementById('notes-chev-' + tid);
+  if (!body) return;
+  const opening = !body.classList.contains('open');
+  body.classList.toggle('open', opening);
+  if (chev) chev.textContent = opening ? '▾' : '▸';
+  if (opening) await loadNotes(tid);
+}
+
+async function loadNotes(tid) {
+  const list = document.getElementById('notes-list-' + tid);
+  const countSpan = document.getElementById('notes-count-' + tid);
+  if (!list) return;
+  list.innerHTML = '<div class="note-empty">Loading&hellip;</div>';
+  try {
+    const r = await fetch('/api/tickets/' + encodeURIComponent(tid) + '/notes');
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Load failed');
+    const notes = d.notes || [];
+    if (countSpan) countSpan.textContent = '· ' + notes.length;
+    if (!notes.length) {
+      list.innerHTML = '<div class="note-empty">No notes yet.</div>';
+      return;
+    }
+    list.innerHTML = notes.map(n => renderNote(tid, n)).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="note-empty" style="color:#991b1b">Error: ' + escHtml(e.message) + '</div>';
+  }
+}
+
+function renderNote(tid, n) {
+  const display = n.user_name || n.user_email || 'Unknown user';
+  const when = n.created_at ? n.created_at.slice(0,16).replace('T', ' ') + ' UTC' : '';
+  const edited = n.updated_at ? ' · edited' : '';
+  const adminActions = IS_ADMIN
+    ? `<span class="note-admin-actions">
+         <button class="note-admin-btn" onclick="editNote('${tid}', ${n.id})">Edit</button>
+         <button class="note-admin-btn danger" onclick="deleteNote('${tid}', ${n.id})">Delete</button>
+       </span>`
+    : '';
+  return `<div class="note-item" id="note-${n.id}">
+    <div class="note-meta">
+      <span><span class="note-meta-name">${escHtml(display)}</span> · ${escHtml(when)}${edited}</span>
+      ${adminActions}
+    </div>
+    <div class="note-text" id="note-text-${n.id}">${escHtml(n.note_text || '')}</div>
+  </div>`;
+}
+
+async function addNote(tid) {
+  const ta = document.getElementById('note-new-' + tid);
+  const text = (ta?.value || '').trim();
+  if (!text) return;
+  const btn = ta.parentElement.querySelector('.note-add-submit');
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch('/api/tickets/' + encodeURIComponent(tid) + '/notes', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ note_text: text })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Save failed');
+    ta.value = '';
+    await loadNotes(tid);
+  } catch (e) {
+    alert('Add note failed: ' + e.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function editNote(tid, noteId) {
+  const textDiv = document.getElementById('note-text-' + noteId);
+  if (!textDiv) return;
+  const original = textDiv.textContent;
+  textDiv.innerHTML = `
+    <textarea class="note-edit-input" id="note-edit-input-${noteId}">${escHtml(original)}</textarea>
+    <div style="margin-top:6px;display:flex;gap:6px;">
+      <button class="note-add-submit" onclick="saveEditNote('${tid}', ${noteId})">Save</button>
+      <button class="note-admin-btn" onclick="cancelEditNote('${tid}', ${noteId}, ${JSON.stringify(original)})">Cancel</button>
+    </div>`;
+  const input = document.getElementById('note-edit-input-' + noteId);
+  if (input) input.focus();
+}
+
+function cancelEditNote(tid, noteId, original) {
+  const textDiv = document.getElementById('note-text-' + noteId);
+  if (textDiv) textDiv.textContent = original;
+}
+
+async function saveEditNote(tid, noteId) {
+  const input = document.getElementById('note-edit-input-' + noteId);
+  const text = (input?.value || '').trim();
+  if (!text) return;
+  try {
+    const r = await fetch('/api/tickets/' + encodeURIComponent(tid) + '/notes/' + noteId, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ note_text: text })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Save failed');
+    await loadNotes(tid);
+  } catch (e) {
+    alert('Edit failed: ' + e.message);
+  }
+}
+
+async function deleteNote(tid, noteId) {
+  if (!confirm('Delete this note?')) return;
+  try {
+    const r = await fetch('/api/tickets/' + encodeURIComponent(tid) + '/notes/' + noteId, { method: 'DELETE' });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Delete failed');
+    await loadNotes(tid);
+  } catch (e) {
+    alert('Delete failed: ' + e.message);
+  }
+}
+
+loadCommunity();
+</script>
+{% endblock %}

@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% block title %}Users — Cedarline QA{% endblock %}
+
+{% block extra_css %}
+.users-wrap { max-width: 1100px; margin: 28px auto 80px; padding: 0 24px; }
+.users-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
+.users-header h2 { font-size: 22px; color: #1a1a2e; }
+.users-header p { font-size: 13px; color: #6a6a82; }
+.btn { background: #1a1a2e; color: #fff; border: none; padding: 9px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; }
+.btn:hover { background: #2a2a4a; }
+.btn.secondary { background: #fff; color: #1a1a2e; border: 1px solid rgba(26,26,46,.2); }
+.btn.secondary:hover { background: #f4f5f7; }
+.btn.danger { background: #b91c1c; color: #fff; }
+.btn.danger:hover { background: #991b1b; }
+.btn.tiny { font-size: 11px; padding: 5px 10px; }
+.users-table { width: 100%; background: #fff; border: 1px solid rgba(26,26,46,.08); border-radius: 10px; overflow: hidden; border-collapse: collapse; }
+.users-table th, .users-table td { padding: 10px 14px; text-align: left; font-size: 13px; border-bottom: 1px solid rgba(26,26,46,.06); vertical-align: middle; }
+.users-table th { background: #f4f5f7; font-weight: 600; color: #1a1a2e; font-size: 12px; letter-spacing: .2px; }
+.users-table tr:last-child td { border-bottom: none; }
+.users-table tr.inactive { opacity: .55; }
+.badge { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+.badge.admin { background: rgba(200,155,60,.18); color: #8a6a1d; }
+.badge.viewer { background: rgba(26,26,46,.08); color: #4b4b63; }
+.badge.inactive { background: #fee2e2; color: #991b1b; margin-left: 6px; }
+.perm-chip { display: inline-block; background: #eef2ff; color: #3730a3; font-size: 10px; letter-spacing: .2px; padding: 2px 7px; border-radius: 10px; margin: 2px 2px 0 0; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(26,26,46,.55); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal-backdrop.open { display: flex; }
+.modal { background: #fff; border-radius: 10px; width: 520px; max-width: calc(100vw - 40px); padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,.25); max-height: calc(100vh - 40px); overflow-y: auto; }
+.modal h3 { font-size: 18px; margin-bottom: 14px; color: #1a1a2e; }
+.modal label { display: block; font-size: 12px; font-weight: 600; color: #1a1a2e; margin-top: 12px; margin-bottom: 4px; }
+.modal input[type="text"], .modal input[type="email"], .modal input[type="password"] { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid rgba(26,26,46,.18); border-radius: 6px; font-family: inherit; }
+.modal input:focus { outline: none; border-color: #C89B3C; }
+.modal .perm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-top: 6px; }
+.modal .perm-grid label { display: flex; align-items: center; gap: 6px; font-weight: 500; text-transform: none; letter-spacing: 0; margin: 2px 0; font-size: 13px; }
+.modal .perm-grid input[type="checkbox"] { width: 14px; height: 14px; }
+.modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px; }
+.modal-error { background: #fff1f2; color: #9f1239; padding: 9px 12px; border-radius: 6px; font-size: 12px; border: 1px solid #fecdd3; margin-top: 12px; }
+.admin-row label { margin-top: 14px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; }
+.admin-row input[type="checkbox"] { width: 14px; height: 14px; }
+
+/* Audit-trail activity ticker (Phase 3, 2026-04-27) */
+.activity-section { margin-top: 36px; }
+.activity-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+.activity-header h3 { font-size: 16px; color: #1a1a2e; }
+.activity-header .activity-meta { font-size: 11px; color: #6a6a82; }
+.activity-list { background: #fff; border: 1px solid rgba(26,26,46,.08); border-radius: 10px; overflow: hidden; }
+.activity-row { display: grid; grid-template-columns: 130px 130px 110px 1fr 110px; gap: 10px; align-items: baseline; padding: 9px 14px; font-size: 12px; color: #4b5563; border-bottom: 1px solid rgba(26,26,46,.06); }
+.activity-row:last-child { border-bottom: none; }
+.activity-row .a-when { color: #6a6a82; font-family: monospace; font-size: 11px; }
+.activity-row .a-who  { color: #1a1a2e; font-weight: 600; }
+.activity-row .a-verb { color: #1a1a2e; font-weight: 500; }
+.activity-row .a-entity { color: #4b5563; font-family: monospace; font-size: 11px; }
+.activity-row .a-detail { color: #6a6a82; font-style: italic; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity-row.bulk .a-verb::after { content: ' (bulk)'; color: #92590a; font-style: italic; font-weight: 500; }
+.activity-row.control { background: #fbfaf5; }
+.activity-row.control .a-verb { color: #8a6a1d; }
+.activity-empty { padding: 18px; text-align: center; color: #6a6a82; font-size: 13px; font-style: italic; }
+.activity-error { padding: 14px; color: #991b1b; font-size: 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; margin-top: 8px; }
+
+{% endblock %}
+
+{% block content %}
+<div class="users-wrap">
+  <div class="users-header">
+    <div>
+      <h2>Users</h2>
+      <p>Admin-managed accounts. Permissions default to Communities-only for new users; tick more pages as needed.</p>
+    </div>
+    <button class="btn" id="btn-add-user">+ Add user</button>
+  </div>
+
+  <table class="users-table" id="users-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Access</th>
+        <th>Last login</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody><tr><td colspan="6" style="text-align:center; color:#6a6a82;">Loading&hellip;</td></tr></tbody>
+  </table>
+
+  <div class="activity-section">
+    <div class="activity-header">
+      <div>
+        <h3>Recent activity</h3>
+        <p class="activity-meta">Newest first. Refreshes every 60 seconds. Each row is one user-attributed action on a ticket.</p>
+      </div>
+      <span class="activity-meta" id="activity-status">&nbsp;</span>
+    </div>
+    <div class="activity-list" id="activity-list">
+      <div class="activity-empty">Loading&hellip;</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="user-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add user</h3>
+    <form id="user-form">
+      <input type="hidden" id="f-user-id" value="">
+
+      <label for="f-email">Email</label>
+      <input id="f-email" type="email" required>
+
+      <label for="f-name">Name</label>
+      <input id="f-name" type="text">
+
+      <label for="f-password" id="f-password-label">Password</label>
+      <input id="f-password" type="password" autocomplete="new-password">
+      <div style="font-size:11px; color:#6a6a82; margin-top:4px;" id="f-password-hint">Minimum 8 characters.</div>
+
+      <div class="admin-row">
+        <label><input type="checkbox" id="f-admin"> Grant admin (full access to all pages + user management)</label>
+      </div>
+
+      <label style="margin-top:16px;">Page access</label>
+      <div class="perm-grid" id="f-perms">
+        {% for page in gated_pages %}
+          {% if page != 'users_admin' %}
+          <label><input type="checkbox" data-perm="{{ page }}"> {{ page|replace('_',' ')|title }}</label>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div style="font-size:11px; color:#6a6a82; margin-top:4px;">Admins automatically receive access to everything. Users admin is admin-only by definition.</div>
+
+      <div class="modal-error" id="f-error" style="display:none;"></div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn secondary" id="btn-cancel">Cancel</button>
+        <button type="submit" class="btn" id="btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="pw-modal">
+  <div class="modal">
+    <h3>Reset password</h3>
+    <p style="font-size:13px; color:#4b4b63; margin-bottom:6px;"><span id="pw-user-label"></span></p>
+    <label for="pw-new">New password</label>
+    <input id="pw-new" type="password" autocomplete="new-password">
+    <div style="font-size:11px; color:#6a6a82; margin-top:4px;">Minimum 8 characters.</div>
+    <div class="modal-error" id="pw-error" style="display:none;"></div>
+    <div class="modal-footer">
+      <button type="button" class="btn secondary" id="pw-cancel">Cancel</button>
+      <button type="button" class="btn" id="pw-save">Reset password</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API = '/api/users';
+const meId = {{ current_user.id if current_user else 'null' }};
+let cachedUsers = [];
+
+async function loadUsers() {
+  const tbody = document.querySelector('#users-table tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#6a6a82;">Loading&hellip;</td></tr>';
+  try {
+    const resp = await fetch(API);
+    if (!resp.ok) throw new Error('Failed to load users');
+    const data = await resp.json();
+    cachedUsers = data.users || [];
+    renderUsers(cachedUsers);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#9f1239;">${e.message}</td></tr>`;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ── Activity ticker (Phase 3, 2026-04-27) ────────────────────────────────────
+// Polls /api/audit-events every 60s. Admin-only (the page itself is
+// admin-gated). Renders 25 most recent events as a compact list.
+
+const ACTIVITY_LIMIT = 25;
+const ACTIVITY_REFRESH_MS = 60000;
+const TICKET_ACTION_VERBS = {
+  resolve:        'Resolved',
+  acknowledge:    'Acknowledged',
+  flag_incorrect: 'Flagged as incorrect',
+  restore:        'Restored',
+  archive:        'Archived',
+  notes_update:   'Edited notes on',
+  note_create:    'Added a note to',
+  note_edit:      'Edited a note on',
+  note_delete:    'Deleted a note from',
+};
+const CONTROL_ACTION_VERBS = {
+  edit:    'Edited check',
+  rename:  'Renamed check',
+  mute:    'Muted check',
+  unmute:  'Unmuted check',
+  retire:  'Retired check',
+  revive:  'Revived check',
+  capture: 'Captured template',
+};
+
+function formatActivityWhen(iso) {
+  if (!iso) return '';
+  const t = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+  if (isNaN(t.getTime())) return iso;
+  const diffSec = Math.max(0, (Date.now() - t.getTime()) / 1000);
+  if (diffSec < 60)        return 'just now';
+  if (diffSec < 3600)      return Math.floor(diffSec / 60) + 'm ago';
+  if (diffSec < 86400)     return Math.floor(diffSec / 3600) + 'h ago';
+  if (diffSec < 86400 * 7) return Math.floor(diffSec / 86400) + 'd ago';
+  return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function activityDetail(ev) {
+  const p = ev.payload || {};
+  // Control-action specific summaries first — they tend to have richer
+  // payloads than ticket actions.
+  if (ev.entity_type === 'email_controls') {
+    if (ev.action === 'edit') {
+      // Show which fields changed without dumping the full before/after JSON.
+      if (p.before && p.after) {
+        const changed = Object.keys(p.after).filter(k =>
+          JSON.stringify(p.before[k]) !== JSON.stringify(p.after[k]));
+        if (changed.length) return 'Changed: ' + changed.join(', ');
+      }
+      return 'Edited settings';
+    }
+    if (ev.action === 'rename' && p.before && p.after) {
+      return p.before.issue_type + ' → ' + p.after.issue_type;
+    }
+    if (ev.action === 'mute'   && p.reason)              return 'Reason: ' + p.reason;
+    if (ev.action === 'mute'   && p.mode === 'whole_area') return 'Whole category muted';
+    if (ev.action === 'unmute' && p.mode === 'whole_area') return 'Whole category unmuted';
+    if (ev.action === 'retire') {
+      const n = p.archived_tickets ?? p.tickets_resolved ?? 0;
+      const tail = n ? ` (${n} ticket${n === 1 ? '' : 's'} closed)` : '';
+      return (p.reason || p.notes || 'Retired') + tail;
+    }
+    if (ev.action === 'capture') {
+      return `Pattern: "${(p.pattern || '').slice(0, 60)}" — ${p.rewritten_count || 0} ticket(s)`;
+    }
+    return '';
+  }
+  // Ticket actions
+  if (p.reason)                             return p.reason;
+  if (p.prior_status && p.new_status)       return p.prior_status + ' → ' + p.new_status;
+  if (ev.action === 'note_create' && p.note_text) return p.note_text;
+  if (ev.action === 'note_edit'   && p.new_text)  return p.new_text;
+  return '';
+}
+
+function activityEntityDisplay(ev) {
+  // Tickets show as "QA-1234" verbatim. email_controls entity_id is encoded
+  // as "Area||Issue Type"; render it as "Area / Issue Type" for humans.
+  if (ev.entity_type === 'email_controls' && typeof ev.entity_id === 'string') {
+    const idx = ev.entity_id.indexOf('||');
+    if (idx > -1) {
+      return ev.entity_id.slice(0, idx) + ' / ' + ev.entity_id.slice(idx + 2);
+    }
+  }
+  return ev.entity_id;
+}
+
+function renderActivityRow(ev) {
+  const verbMap = ev.entity_type === 'email_controls' ? CONTROL_ACTION_VERBS : TICKET_ACTION_VERBS;
+  const who   = escapeHtml(ev.actor_name || ev.actor_email_snapshot || 'Unknown');
+  const verb  = escapeHtml(verbMap[ev.action] || ev.action);
+  const ent   = escapeHtml(activityEntityDisplay(ev));
+  const when  = escapeHtml(formatActivityWhen(ev.created_at));
+  const det   = escapeHtml(activityDetail(ev));
+  const bulkClass = ev.bulk_id ? ' bulk' : '';
+  const entityTypeClass = ev.entity_type === 'email_controls' ? ' control' : '';
+  return `<div class="activity-row${bulkClass}${entityTypeClass}" title="${ev.bulk_id ? 'Part of bulk action ' + escapeHtml(ev.bulk_id) : ''}">
+    <span class="a-when">${when}</span>
+    <span class="a-who">${who}</span>
+    <span class="a-verb">${verb}</span>
+    <span class="a-entity">${ent}</span>
+    <span class="a-detail">${det}</span>
+  </div>`;
+}
+
+async function loadActivity() {
+  const list   = document.getElementById('activity-list');
+  const status = document.getElementById('activity-status');
+  if (!list) return;
+  try {
+    const r = await fetch('/api/audit-events?limit=' + ACTIVITY_LIMIT);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Load failed');
+    const events = d.events || [];
+    if (!events.length) {
+      list.innerHTML = '<div class="activity-empty">No activity yet. Resolve, acknowledge, or flag a ticket to see it appear here.</div>';
+    } else {
+      list.innerHTML = events.map(renderActivityRow).join('');
+    }
+    if (status) {
+      const now = new Date();
+      status.textContent = 'Refreshed ' + now.toLocaleTimeString();
+    }
+  } catch (e) {
+    list.innerHTML = '<div class="activity-error">Could not load activity: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function renderUsers(users) {
+  const tbody = document.querySelector('#users-table tbody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#6a6a82;">No users yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => {
+    const perms = u.page_permissions || {};
+    const chips = u.is_admin
+      ? '<span class="perm-chip">All pages</span>'
+      : Object.keys(perms).filter(p => perms[p]).map(p => `<span class="perm-chip">${escapeHtml(p.replace(/_/g,' '))}</span>`).join('') || '<span style="color:#9a9aaa; font-size:12px;">None</span>';
+    const roleBadge = u.is_admin
+      ? '<span class="badge admin">Admin</span>'
+      : '<span class="badge viewer">Viewer</span>';
+    const activeBadge = u.active ? '' : '<span class="badge inactive">Inactive</span>';
+    const last = u.last_login_at ? escapeHtml(u.last_login_at.slice(0,10)) : '—';
+    const isSelf = u.id === meId;
+    return `<tr class="${u.active ? '' : 'inactive'}">
+      <td><strong>${escapeHtml(u.name || '—')}</strong>${isSelf ? ' <span style="font-size:10px;color:#6a6a82;">(you)</span>' : ''}</td>
+      <td>${escapeHtml(u.email)}</td>
+      <td>${roleBadge}${activeBadge}</td>
+      <td>${chips}</td>
+      <td>${last}</td>
+      <td style="text-align:right;">
+        <div class="row-actions" style="justify-content:flex-end;">
+          <button class="btn secondary tiny" data-action="edit" data-id="${u.id}">Edit</button>
+          <button class="btn secondary tiny" data-action="reset" data-id="${u.id}">Reset pw</button>
+          <button class="btn ${u.active ? 'danger' : 'secondary'} tiny" data-action="toggle-active" data-id="${u.id}" ${isSelf && u.active ? 'disabled title="Can&#39;t deactivate yourself"' : ''}>
+            ${u.active ? 'Deactivate' : 'Activate'}
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openUserModal(user) {
+  document.getElementById('f-error').style.display = 'none';
+  document.getElementById('f-user-id').value = user ? user.id : '';
+  document.getElementById('f-email').value = user ? user.email : '';
+  document.getElementById('f-name').value = user ? (user.name || '') : '';
+  document.getElementById('f-password').value = '';
+  document.getElementById('f-admin').checked = user ? !!user.is_admin : false;
+  document.getElementById('modal-title').textContent = user ? 'Edit user' : 'Add user';
+  document.getElementById('f-password-label').textContent = user ? 'New password (leave blank to keep)' : 'Password';
+  document.getElementById('f-password').required = !user;
+  document.getElementById('f-email').disabled = !!user;
+  // Reset perms checkboxes
+  const perms = user ? (user.page_permissions || {}) : { communities: true };
+  document.querySelectorAll('#f-perms input[type="checkbox"]').forEach(cb => {
+    cb.checked = !!perms[cb.dataset.perm];
+  });
+  document.getElementById('user-modal').classList.add('open');
+}
+
+function closeUserModal() { document.getElementById('user-modal').classList.remove('open'); }
+
+async function saveUser(e) {
+  e.preventDefault();
+  const err = document.getElementById('f-error');
+  err.style.display = 'none';
+  const id = document.getElementById('f-user-id').value;
+  const perms = {};
+  document.querySelectorAll('#f-perms input[type="checkbox"]').forEach(cb => {
+    perms[cb.dataset.perm] = cb.checked;
+  });
+  const payload = {
+    name: document.getElementById('f-name').value.trim(),
+    is_admin: document.getElementById('f-admin').checked,
+    page_permissions: perms,
+  };
+  const pw = document.getElementById('f-password').value;
+  if (pw) payload.password = pw;
+  let url, method;
+  if (id) {
+    url = `${API}/${id}`; method = 'PATCH';
+  } else {
+    url = API; method = 'POST';
+    payload.email = document.getElementById('f-email').value.trim();
+    if (!pw) { err.textContent = 'Password is required for new users.'; err.style.display = 'block'; return; }
+    payload.password = pw;
+  }
+  try {
+    const resp = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+    const data = await resp.json();
+    if (!resp.ok) { err.textContent = data.error || 'Save failed.'; err.style.display = 'block'; return; }
+    closeUserModal();
+    await loadUsers();
+  } catch (e) {
+    err.textContent = e.message; err.style.display = 'block';
+  }
+}
+
+function openResetModal(user) {
+  document.getElementById('pw-error').style.display = 'none';
+  document.getElementById('pw-new').value = '';
+  document.getElementById('pw-user-label').textContent = `${user.name || ''} <${user.email}>`;
+  document.getElementById('pw-modal').dataset.userId = user.id;
+  document.getElementById('pw-modal').classList.add('open');
+}
+function closeResetModal() { document.getElementById('pw-modal').classList.remove('open'); }
+
+async function saveResetPassword() {
+  const err = document.getElementById('pw-error');
+  err.style.display = 'none';
+  const id = document.getElementById('pw-modal').dataset.userId;
+  const pw = document.getElementById('pw-new').value;
+  if (pw.length < 8) { err.textContent = 'Must be at least 8 characters.'; err.style.display = 'block'; return; }
+  try {
+    const resp = await fetch(`${API}/${id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password: pw}) });
+    const data = await resp.json();
+    if (!resp.ok) { err.textContent = data.error || 'Reset failed.'; err.style.display = 'block'; return; }
+    closeResetModal();
+  } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+}
+
+async function toggleActive(user) {
+  const nextActive = !user.active;
+  const verb = nextActive ? 'activate' : 'deactivate';
+  if (!confirm(`${verb[0].toUpperCase()+verb.slice(1)} ${user.email}?`)) return;
+  try {
+    const resp = await fetch(`${API}/${user.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({active: nextActive}) });
+    const data = await resp.json();
+    if (!resp.ok) { alert(data.error || 'Failed.'); return; }
+    await loadUsers();
+  } catch (e) { alert(e.message); }
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const id = parseInt(btn.dataset.id, 10);
+  const user = cachedUsers.find(u => u.id === id);
+  if (!user) return;
+  if (btn.dataset.action === 'edit') openUserModal(user);
+  else if (btn.dataset.action === 'reset') openResetModal(user);
+  else if (btn.dataset.action === 'toggle-active') toggleActive(user);
+});
+document.getElementById('btn-add-user').addEventListener('click', () => openUserModal(null));
+document.getElementById('btn-cancel').addEventListener('click', closeUserModal);
+document.getElementById('user-form').addEventListener('submit', saveUser);
+document.getElementById('pw-cancel').addEventListener('click', closeResetModal);
+document.getElementById('pw-save').addEventListener('click', saveResetPassword);
+
+loadUsers();
+loadActivity();
+setInterval(loadActivity, ACTIVITY_REFRESH_MS);
+</script>
+{% endblock %}

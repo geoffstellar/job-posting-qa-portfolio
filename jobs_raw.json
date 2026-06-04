@@ -1,0 +1,42 @@
+[
+  {
+    "id": 4001,
+    "name": "Cook",
+    "organization": { "name": "Sage Crossing Retirement Community" },
+    "career_site_url": "https://careers.example.com/cedarline/4001",
+    "locations": [ { "address": "2200 E Williams Field Rd", "city": "Gilbert", "state": "AZ" } ],
+    "job_description": "<p>Sage Crossing Retirement Community in Gilbert, AZ is hiring a Cook to join our dining services team.</p><h3>Responsibilities</h3><ul><li>Prepares resident meals according to planned menus and dietary needs.</li><li>Maintains a clean, sanitary kitchen that follows all food-safety standards.</li><li>Assists with weekly inventory counts and food ordering.</li></ul><h3>Qualifications</h3><ul><li>Previous cooking experience in a senior living or healthcare setting preferred.</li><li>A food handler certification, or a willingness to obtian one within 30 days of hire.</li></ul>"
+  },
+  {
+    "id": 4002,
+    "name": "Resident Care Aide",
+    "organization": { "name": "Willow Bend Senior Living" },
+    "career_site_url": "https://careers.example.com/cedarline/4002",
+    "locations": [ { "address": "4815 Hampshire Ct", "city": "Fort Collins", "state": "CO" } ],
+    "job_description": "<p>Willow Bend Senior Living is a large senior living community in Fort Collins, CO seeking a compassionate Resident Care Aide.</p><p><em>&quot;Our highest aim is to do and be the best in all we undertake, and to provide a Cedarline life for every resident, their families and our employees.&quot; &mdash; Marian Ellsworth, CEO</em></p><h3>About Marigold Court</h3><p>Marigold Court has proudly served local families for over a decade with warmth and dignity.</p><h3>What We Offer</h3><ul><li>Competitive wages and a full medical, dental, and vision benefits package.</li><li>Paid time off and a 401(k) plan.</li></ul><h3>Responsibilities</h3><ul><li>Supports residents with bathing, dressing, grooming, and mobility.</li><li>Documents the care provided and communicates changes to the care team.</li></ul><h3>Qualifications</h3><ul><li>A genuine compassion for seniors and a team-oriented attitude.</li><li>CNA certification preferred but not required.</li></ul><p>Willow Bend Senior Living is an equal opportunity employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, age, sex, or national origin.</p>"
+  },
+  {
+    "id": 4003,
+    "name": "Maintenance Technician",
+    "organization": { "name": "Harbor Light Healthcare Center" },
+    "career_site_url": "https://careers.example.com/cedarline/4003",
+    "locations": [ { "address": "1320 S Union Ave", "city": "Tacoma", "state": "WA" } ],
+    "job_description": "<p>Harbor Light Healthcare Center in Tacoma, WA is seeking a skilled Maintenance Technician.</p><p><em>&quot;Our highest aim is to do and be the best in all we undertake, and to provide a Cedarline life for every resident, their families and our employees.&quot; &mdash; Marian Ellsworth, CEO</em> Cedarline Senior Living is a premier assisted living and memory care provider.</p><p><span style='font-size:18pt'>What You&#39;ll Do</span></p><ul><li>Completes <span style='color:#1155cc'>preventive maintenance</span> across building systems, including:<ul><li>HVAC filter changes</li><li>Plumbing and fixture repairs</li></ul></li><li>Responds to <u>resident work orders</u> in a timely manner.</li><li>Keeps grounds and common areas safe and presentable.</li></ul><h3>Qualifications</h3><ul><li>Two or more years of general maintenance experience.</li><li>Working knowledge of basic plumbing, electrical, and HVAC systems.</li></ul><p><mark>Apply today to join our team.</mark></p><p>Harbor Light Healthcare Center is an equal opportunity employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, age, sex, or national origin.</p>"
+  },
+  {
+    "id": 4004,
+    "name": "Caregiver",
+    "organization": { "name": "Marigold Court Retirement Community" },
+    "career_site_url": "https://careers.example.com/cedarline/4004",
+    "locations": [ { "address": "7150 W State St", "city": "Boise", "state": "ID" } ],
+    "job_description": "<p>Marigold Court Retirement Community in Boise, ID is hiring a Caregiver! Come join our AMAZING team!!!</p><p><em>&quot;Our highest aim is to do and be the best in all we undertake, and to provide a Cedarline life for every resident, their families and our employees.&quot; &mdash; Marian Ellsworth, CEO</em></p><h3>What We Offer</h3><ul><li>Competitive pay, medical, dental, vision, PTO, paid holidays, 401k and more!!!</li></ul><h3>Responsibilities</h3><ul><li>Assists residents with the activities of daily living.</li><li>Monitors each patient&#39;s well-being and reports changes to the nurse.</li></ul><h3>Qualifications</h3><ul><li>You MUST bring a GREAT attitude and a real passion for seniors!</li><li>Prior caregiving experience is a PLUS!</li></ul><p>Questions? Email hiring@marigoldcourt.cedarline.example.com or APPLY soon!</p><p>Schedule: [INSERT SHIFT]</p><p>Marigold Court is an equal opportunity employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, age, sex, or national origin.</p>"
+  },
+  {
+    "id": 4005,
+    "name": "Certified Nursing Assistant (CNA)",
+    "organization": { "name": "Lanternwood at Cedar Mesa" },
+    "career_site_url": "https://careers.example.com/cedarline/4005",
+    "locations": [ { "address": "8540 N Cedar Mesa Dr", "city": "Marana", "state": "AZ" } ],
+    "job_description": "<p>Lanternwood at Cedar Mesa in Marana, AZ is hiring a Certified Nursing Assistant (CNA) to join our resident care team.</p><p><em>&quot;Our highest aim is to do and be the best in all we undertake, and to provide a Cedarline life for every resident, their families and our employees.&quot; &mdash; Marian Ellsworth, CEO</em> Cedarline Senior Living is a premier assisted living and memory care provider, founded in 2012.</p><h3>What We Offer</h3><ul><li>Competitive pay based on experience.</li><li>Medical, dental, and vision coverage.</li><li>Paid time off and a 401(k) plan.</li></ul><h3>Responsibilities</h3><ul><li>Assists residents with the activities of daily living.</li><li>Monitors and records vital signs.</li><li>Reports changes in a resident's condition to the charge nurse.</li></ul><h3>Qualifications</h3><ul><li>An active CNA certification in the state of Arizona.</li><li>A genuine commitment to caring for seniors with dignity.</li></ul><p>Lanternwood at Cedar Mesa is an equal opportunity employer. All qualified applicants will receive consideration for employment without regard to race, color, religion, age, sex, or national origin.</p>"
+  }
+]

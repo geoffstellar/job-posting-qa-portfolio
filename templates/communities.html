@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Communities — Cedarline QA{% endblock %}
+{% block extra_css %}
+    .container { max-width: 900px; margin: 0 auto; padding: 32px 24px 60px; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { color: #666; font-size: 13px; margin-bottom: 28px; }
+    .comm-list { display: flex; flex-direction: column; gap: 10px; }
+    .comm-card {
+      background: white; border-radius: 12px; border: 1px solid #e4e6ea;
+      padding: 18px 22px; display: flex; align-items: center; gap: 16px;
+      text-decoration: none; color: inherit; transition: box-shadow .15s, border-color .15s;
+      cursor: pointer;
+    }
+    .comm-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); border-color: #C89B3C; }
+    .comm-name { font-weight: 700; font-size: 15px; flex: 1; }
+    .sev-pills { display: flex; gap: 7px; align-items: center; }
+    .sev-pill {
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 800;
+      letter-spacing: .3px; white-space: nowrap;
+    }
+    .sev-pill.crit  { background: #fde8e8; color: #991b1b; }
+    .sev-pill.high  { background: #fff3e0; color: #9a4500; }
+    .sev-pill.med   { background: #e8f5e9; color: #1b5e20; }
+    .sev-pill.low   { background: #f0f4ff; color: #3730a3; }
+    .sev-pill.zero  { opacity: .35; }
+    .total-badge {
+      font-size: 12px; color: #888; white-space: nowrap;
+    }
+    .arrow { color: #C89B3C; font-size: 18px; margin-left: 4px; }
+    .empty { color: #888; font-size: 14px; margin-top: 40px; text-align: center; }
+    .loading { color: #888; font-size: 14px; margin-top: 40px; }
+{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Communities</h1>
+  <p class="subtitle">Open QA tickets by community — sorted by severity. Click a community to review.</p>
+  <div class="comm-list" id="comm-list">
+    <div class="loading">Loading…</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+(async () => {
+  const list = document.getElementById('comm-list');
+  try {
+    const r = await fetch('/api/communities');
+    const data = await r.json();
+    if (!data.length) {
+      list.innerHTML = '<div class="empty">✓ No open tickets across any community.</div>';
+      return;
+    }
+    list.innerHTML = data.map(c => {
+      const critCls = c.critical > 0 ? 'crit' : 'crit zero';
+      const highCls = c.high     > 0 ? 'high' : 'high zero';
+      const medCls  = c.medium   > 0 ? 'med'  : 'med zero';
+      const lowCls  = c.low      > 0 ? 'low'  : 'low zero';
+      return `<a class="comm-card" href="/community/${encodeURIComponent(c.community)}">
+        <span class="comm-name">${escHtml(c.community)}</span>
+        <span class="sev-pills">
+          <span class="sev-pill ${critCls}">${c.critical} CRITICAL</span>
+          <span class="sev-pill ${highCls}">${c.high} HIGH</span>
+          <span class="sev-pill ${medCls}">${c.medium} MEDIUM</span>
+          <span class="sev-pill ${lowCls}">${c.low} LOW</span>
+        </span>
+        <span class="total-badge">${c.total} open</span>
+        <span class="arrow">›</span>
+      </a>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="empty">Could not load communities: ' + escHtml(e.message) + '</div>';
+  }
+})();
+</script>
+{% endblock %}

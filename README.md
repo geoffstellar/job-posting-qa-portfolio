@@ -147,17 +147,6 @@ example auto-deploy-on-push workflow.
 
 ---
 
-## Screenshots
-
-> **TODO (me):** capture and add screenshots after running the demo locally —
-> the Tickets view grouped by check type, a community detail page, and the
-> Ticket Controls accordion. Save them under `docs/screenshots/` and embed here.
-
-<!-- ![Tickets view](docs/screenshots/tickets.png) -->
-<!-- ![Community detail](docs/screenshots/community.png) -->
-
----
-
 ## What I'd build next
 
 - **Postgres runtime cutover.** Alembic migrations already run on Postgres via

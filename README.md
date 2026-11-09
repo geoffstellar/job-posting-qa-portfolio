@@ -1,4 +1,21 @@
-# Job-Posting QA
+# Recruiting Ops Automation: Job-Posting QA + Action Agent
+
+Two tools I built and run for a senior-living recruiting team, using Claude as
+the engine for both:
+
+- **Job-Posting QA** (this folder): finds what's wrong with every live job
+  posting, every night. Runnable demo below.
+- **[Action Agent](action-agent/)**: fixes it, and does the rest of the
+  click-through admin in an applicant tracking system with no write API: postings,
+  candidate messages, declines, offers, hiring setup. Every write is staged for a
+  human to approve first. Case study + a runnable demo of the safety pattern.
+
+Together: about 1,100 posting fixes and 95 hours of admin work saved so far,
+measured from the agent's own audit log.
+
+---
+
+## Job-Posting QA
 
 A two-layer quality-assurance tool for high-volume job postings. It pulls live
 postings from Hireology's public careers API, runs each one through a **deterministic
@@ -147,6 +164,37 @@ example auto-deploy-on-push workflow.
 
 ---
 
+## Since this snapshot (June to November)
+
+The code here is the June version. The private one has moved on by about 300
+commits; the highlights:
+
+- **Feeds the action agent.** A read-only token API (`/api/tickets/open`) hands
+  open tickets to the agent, which fixes them on the live postings and reports
+  back. A dashboard card tracks fixes and hours saved.
+- **Finding identity.** Every finding gets a stable identity anchored to the
+  posting, with one upsert chokepoint and a near-duplicate guard, so re-scans stop
+  duplicating tickets and anything a human closed stays closed. A one-time merge
+  cleared ~200 live duplicates.
+- **Self-monitoring.** A daily health audit hunts for pipeline problems (tickets
+  wrongly closed when a posting briefly drops out of the feed, stale rows, feed
+  anomalies) and logs every scheduled run to a Notion database.
+- **Pay transparency.** Deterministic checks for Colorado and Washington pay
+  disclosure rules, missing or ambiguous pay ranges, and pay notation. Several
+  judgment checks moved from the AI layer to rules once their pattern was
+  exact: cheaper and never inconsistent.
+- **Job description library.** A generator that builds postings from a library of
+  role and community "ingredients" (most-specific-wins rendering), with a linter
+  that blocks inconsistent output from shipping.
+- **Sourcing spend.** Job-board spend (Appcast via SFTP, Talroo via API) mapped to
+  communities and shown next to each community's tickets.
+- **A live demo page** with real-time counters, a ticket showcase and a "run the
+  next fix" queue that hands a ticket to the action agent on screen.
+- Moved the AI layer to a newer Claude model, and skipped re-review of postings
+  whose content hasn't changed.
+
+---
+
 ## What I'd build next
 
 - **Postgres runtime cutover.** Alembic migrations already run on Postgres via
@@ -157,8 +205,6 @@ example auto-deploy-on-push workflow.
   checks configurable per employer would turn this into a multi-tenant product.
 - **Multi-language postings.** Detect posting language and run a
   language-appropriate style guide so bilingual markets are covered.
-- **Scheduled ingestion + alerting.** Nightly fetch + review on a cron, with a
-  digest of new criticals pushed to the recruiting team.
 - **Reviewer feedback loop.** Use accept/reject decisions on AI findings to tune
   the prompt and retire noisy checks automatically.
 
@@ -167,5 +213,6 @@ example auto-deploy-on-push workflow.
 ## Inspired by
 
 This is a sanitized portfolio version of a real internal tool I built to QA live
-job postings for a senior-living operator. The architecture and product thinking
+job postings for a senior-living operator, and the action agent
+beside it. The architecture and product thinking
 are real; the company, communities, branding, and all data here are fictional.
